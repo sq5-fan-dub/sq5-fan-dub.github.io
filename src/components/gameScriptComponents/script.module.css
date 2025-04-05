@@ -1,0 +1,146 @@
+.dialogue {
+  padding-left: 1em;
+  display: grid;
+  grid-template-columns: max-content fit-content;
+  width: fit-content;
+  margin: 0.5em;
+}
+
+.line {
+  display: grid;
+  grid-column: 1 / 3;
+  grid-template-columns: subgrid;
+  font-family: 'Courier New', monospace;
+  margin-bottom: 0.25em;
+}
+
+.line:hover {
+  background-color: #f0f0f0;
+}
+
+/* Classes to have a set of buttons that are hidden unless the parent element is hovered */
+*>.hover-reveal {
+  display: inline-flex;
+  cursor: pointer;
+  align-items: center;
+  vertical-align: middle;
+  visibility: hidden;
+}
+
+*:hover>.hover-reveal {
+  visibility: initial;
+}
+
+.speaker {
+  font-weight: bold;
+  text-transform: uppercase;
+  grid-column: 1 / 2;
+  justify-self: end;
+}
+
+.line-text {
+  grid-column: 2 / 3;
+  margin-left: 0.5em;
+  max-width: 36em;
+  hyphens: auto;
+}
+
+.line-text b {
+  text-transform: uppercase;
+}
+
+.section {
+  border-left-width: 1px;
+  border-left-style: dashed;
+  border-left-color: transparent;
+}
+
+.section:hover {
+  border-left-color: darkgray;
+}
+
+.section-body {
+  padding-left: 1em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.section-title {
+  padding-left: 0.1em;
+  font-size: 2em;
+  font-weight: bold;
+  font-family: Helvetica, sans-serif;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.section .section-title {
+  font-size: 1.5em;
+}
+
+.section .section .section-title {
+  font-size: 1.25em;
+}
+
+.section .section .section .section-title {
+  font-size: 1.1em;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 20
+}
+
+.button {
+  display: inline-flex;
+  opacity: 10%;
+  cursor: pointer;
+  margin-left: 0.2em;
+  align-items: center;
+  vertical-align: middle;
+
+  user-select: none;
+  -webkit-user-select: none;
+
+  /* In order to allow for popups to be relative to the button */
+  position: relative;
+  left: 0px;
+  top: 0px;
+  contain: none;
+}
+
+/* The icon inside of the copy button */
+.button .material-symbols-outlined {
+  font-size: 1em;
+}
+
+.button:hover {
+  opacity: 100%;
+}
+
+.popupLayer {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+}
+
+.popupBox {
+  position: absolute;
+}
+
+.popup {
+  background-color: #333;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  z-index: 1000;
+  transition: opacity 0.5s ease-out;
+  opacity: 1;
+  pointer-events: none;
+}
