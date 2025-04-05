@@ -1,8 +1,7 @@
-import { ReactNode, MouseEventHandler, useState, useRef, RefObject, Ref, RefCallback, useLayoutEffect, useCallback } from 'react';
+import { ReactNode, MouseEventHandler, useState, useRef, RefObject, Ref, RefCallback, useLayoutEffect, useCallback, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { GameScript, Room, Noun, Conversation, Line, RichText, TextPiece } from './scriptTypes';
 import scriptStyles from './script.module.css';
-import Head from '@docusaurus/Head';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
@@ -68,13 +67,15 @@ function useRefWithSetter<T>(initialValue: T): [RefObject<T>, RefCallback<T>] {
   return [ref, setRef];
 }
 
+// React contexts
+
+const ScriptData = createContext<GameScript | null>(null);
+
 // React components
 
 function Icon({ icon }: { icon: string }): ReactNode {
   return <span className={clsx(['material-symbols-outlined', scriptStyles['material-symbols-outlined']])}>
-    <Head>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    </Head>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     {icon}
   </span>
 }
@@ -94,7 +95,7 @@ function IconButton({
 }
 
 function Popup({ target, x, y, children }: {
-  target: HTMLElement | null,
+  target: RefObject<HTMLElement>,
   x: number,
   y: number,
   children: ReactNode
@@ -103,19 +104,19 @@ function Popup({ target, x, y, children }: {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   useLayoutEffect(() => {
     // If there is a current reference, get its position relative to document.body
-    if (!isBrowser || !target) {
+    if (!isBrowser) {
       return;
     }
     const bodyRect = document.body.getBoundingClientRect();
-    const rect = target.getBoundingClientRect();
+    const rect = target.current.getBoundingClientRect();
     const x = rect.left - bodyRect.left;
     const y = rect.top - bodyRect.top;
 
     if (x !== position.x || y !== position.y) {
       setPosition({ x, y });
     }
-  }, [isBrowser, target]);
-  if (!isBrowser || !target) {
+  }, [isBrowser, target.current]);
+  if (!isBrowser) {
     return null;
   }
   console.log('Popup:', position.x, position.y);
@@ -135,13 +136,13 @@ function Popup({ target, x, y, children }: {
 
 function CopyButton({ text }: { text: string }): ReactNode {
   const isBrowser = useIsBrowser();
+  const buttonRef = useRef<HTMLElement>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [button, setButton] = useState<HTMLElement>(null);
 
   return <>
     <IconButton
       icon="content_copy"
-      parentRef={setButton}
+      parentRef={(ref) => { buttonRef.current = ref }}
       onClick={isBrowser ? (evt) => {
         navigator.clipboard.writeText(text).then(() => {
           setIsOpen(true);
@@ -149,10 +150,13 @@ function CopyButton({ text }: { text: string }): ReactNode {
             setIsOpen(false);
           }, 2000);
         });
-      } : null} />
-    {isOpen ? <Popup target={button} x={8} y={8}>
-      <div className={scriptStyles.popup}>{`Copied ID To Clipboard: ${text}`}</div>
-    </Popup> : null}
+      } : null}
+    />
+    {
+      isOpen && <Popup target={buttonRef} x={8} y={8}>
+        <div className={scriptStyles.popup}>{`Copied ID To Clipboard: ${text}`}</div>
+      </Popup>
+    }
   </>;
 }
 
@@ -179,7 +183,8 @@ function RichTextElem({ richText }: { richText: RichText }): ReactNode {
   return richText.items.map((textItem, index) => <TextPieceElem key={index} textItem={textItem} />)
 }
 
-function LineElem({ script, line }: { script: GameScript, line: Line }): ReactNode {
+function LineElem({ line }: { line: Line }): ReactNode {
+  const script = useContext(ScriptData);
   return <div id={line.id} className={scriptStyles.line}>
     <div className={scriptStyles.speaker}>{script.roles[line.role].short_name}:</div>
     <div className={scriptStyles['line-text']}>
@@ -189,7 +194,7 @@ function LineElem({ script, line }: { script: GameScript, line: Line }): ReactNo
   </div>
 }
 
-function ConversationElem({ script, conversation_id, conversation }: { script: GameScript, conversation_id: string, conversation: Conversation }): ReactNode {
+function ConversationElem({ conversation_id, conversation }: { conversation_id: string, conversation: Conversation }): ReactNode {
   return <div id={conversation_id}>
     {
       conversation.verb &&
@@ -206,19 +211,19 @@ function ConversationElem({ script, conversation_id, conversation }: { script: G
     <div className={scriptStyles.dialogue}>
       {
         conversation.lines.map((line) =>
-          <LineElem script={script} key={line.id} line={line} />)
+          <LineElem key={line.id} line={line} />)
       }
     </div>
   </div>
 }
 
-function NounElem({ script, noun_id, noun }: { script: GameScript, noun_id: string, noun: Noun }): ReactNode {
+function NounElem({ noun_id, noun }: { noun_id: string, noun: Noun }): ReactNode {
+  const script = useContext(ScriptData);
   return <div id={noun_id}>
     <h3><RichTextElem richText={noun.noun_title} /></h3>
     {
       noun.conversations.map((conversation_id) =>
         <ConversationElem
-          script={script}
           key={conversation_id}
           conversation_id={conversation_id}
           conversation={script.conversations[conversation_id]}
@@ -227,13 +232,13 @@ function NounElem({ script, noun_id, noun }: { script: GameScript, noun_id: stri
   </div>
 }
 
-function RoomElem({ script, room_id, room }: { script: GameScript, room_id: string, room: Room }): ReactNode {
+function RoomElem({ room_id, room }: { room_id: string, room: Room }): ReactNode {
+  const script = useContext(ScriptData);
   return <div>
     <h2><RichTextElem richText={room.room_title} /></h2>
     {
       room.nouns.map((noun_id) =>
         <NounElem
-          script={script}
           key={noun_id}
           noun_id={noun_id}
           noun={script.nouns[noun_id]}
@@ -242,7 +247,8 @@ function RoomElem({ script, room_id, room }: { script: GameScript, room_id: stri
   </div>
 }
 
-function RoleTable({ script }: { script: GameScript }): ReactNode {
+function RoleTable({ }): ReactNode {
+  const script = useContext(ScriptData);
   return <table className={scriptStyles.roleTable}>
     <thead>
       <tr>
@@ -266,19 +272,23 @@ function RoleTable({ script }: { script: GameScript }): ReactNode {
 }
 
 export default function ScriptPage({ script }: { script: GameScript }): ReactNode {
+  if (!script) {
+    return null;
+  }
+
   const rooms = mapObject(
     script.rooms,
-    ((room_id, room) => (<RoomElem script={script} key={room_id} room_id={room_id} room={room} />)),
+    ((room_id, room) => (<RoomElem key={room_id} room_id={room_id} room={room} />)),
     (a) => a.room_id);
 
-  return <div>
+  return <ScriptData.Provider value={script}>
     <div>
       <h2>Roles</h2>
-      <RoleTable script={script} />
+      <RoleTable />
     </div>
     <div>
       <h2>Rooms</h2>
       {rooms}
     </div>
-  </div>
+  </ScriptData.Provider>
 }
