@@ -57,14 +57,35 @@ function createPopupLayer(): HTMLDivElement | null {
   return popupLayer;
 }
 
+// Script Page State
+
+type ScriptPageState = {
+  type: 'roomFocus' | 'nounFocus';
+  id: string;
+} | {
+  type: 'default';
+}
+
+type ScriptPageStateUpdater = (state: ScriptPageState) => void;
+
+const ScriptPageStateContext = createContext<[ScriptPageState, ScriptPageStateUpdater] | null>(null);
+
+function useScriptPageState(): [ScriptPageState, ScriptPageStateUpdater] {
+  const state = useContext(ScriptPageStateContext);
+  if (!state) {
+    throw new Error('useScriptPageState must be used within a ScriptPageStateProvider');
+  }
+  return state;
+}
+
 // React Hooks
 
-function useRefWithSetter<T>(initialValue: T): [RefObject<T>, RefCallback<T>] {
-  const ref = useRef<T>(initialValue);
-  const setRef: RefCallback<T> = useCallback((value) => {
-    ref.current = value;
-  }, [])
-  return [ref, setRef];
+function useOnUpdate<T>(value: T, onUpdate: (value: T) => void): void {
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    onUpdate(value);
+  }
 }
 
 // React contexts
@@ -139,18 +160,23 @@ function CopyButton({ text }: { text: string }): ReactNode {
   const buttonRef = useRef<HTMLElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
+  const parentRefCallback = useCallback((ref: HTMLElement) => {
+    buttonRef.current = ref;
+  }, []);
+  const clickCallback = useCallback(() => {
+    navigator.clipboard.writeText(text).then(() => {
+      setIsOpen(true);
+      setTimeout(() => {
+        setIsOpen(false);
+      }, 2000);
+    });
+  }, [text])
+
   return <>
     <IconButton
       icon="content_copy"
-      parentRef={(ref) => { buttonRef.current = ref }}
-      onClick={isBrowser ? (evt) => {
-        navigator.clipboard.writeText(text).then(() => {
-          setIsOpen(true);
-          setTimeout(() => {
-            setIsOpen(false);
-          }, 2000);
-        });
-      } : null}
+      parentRef={parentRefCallback}
+      onClick={isBrowser ? clickCallback : null}
     />
     {
       isOpen && <Popup target={buttonRef} x={8} y={8}>
@@ -271,24 +297,63 @@ function RoleTable({ }): ReactNode {
   </table>;
 }
 
-export default function ScriptPage({ script }: { script: GameScript }): ReactNode {
+export default function ScriptPage({ script, focus }: {
+  script: GameScript,
+  focus?: string,
+}): ReactNode {
+  const [viewState, setViewState] = useState<ScriptPageState>({ type: 'default' });
+  useOnUpdate(focus, () => {
+    if (!focus || focus === '') {
+      setViewState({ type: 'default' });
+      return;
+    }
+    const dashPos = focus.indexOf('-');
+    let focusType: string | null = null;
+    if (dashPos !== -1) {
+      focusType = focus.substring(0, dashPos);
+    }
+    switch (focusType) {
+      case 'room':
+        setViewState({ type: 'roomFocus', id: focus });
+        break;
+      case 'noun':
+        setViewState({ type: 'nounFocus', id: focus });
+        break;
+      default:
+        throw new Error(`Unknown focus type: ${focusType}`);
+    }
+  });
+
   if (!script) {
     return null;
   }
 
-  const rooms = mapObject(
-    script.rooms,
-    ((room_id, room) => (<RoomElem key={room_id} room_id={room_id} room={room} />)),
-    (a) => a.room_id);
+  const body = (() => {
+    switch (viewState.type) {
+      case 'roomFocus':
+        return <RoomElem room_id={viewState.id} room={script.rooms[viewState.id]} />;
+      case 'nounFocus':
+        return <NounElem noun_id={viewState.id} noun={script.nouns[viewState.id]} />;
+      case 'default': {
+        const rooms = mapObject(
+          script.rooms,
+          ((room_id, room) => (<RoomElem key={room_id} room_id={room_id} room={room} />)),
+          (a) => a.room_id);
+        return <div>
+          <h2>Rooms</h2>
+          {rooms}
+        </div>;
+      }
+    }
+  })();
 
   return <ScriptData.Provider value={script}>
-    <div>
-      <h2>Roles</h2>
-      <RoleTable />
-    </div>
-    <div>
-      <h2>Rooms</h2>
-      {rooms}
-    </div>
+    <ScriptPageStateContext.Provider value={[viewState, setViewState]}>
+      <div>
+        <h2>Roles</h2>
+        <RoleTable />
+      </div>
+      {body}
+    </ScriptPageStateContext.Provider>
   </ScriptData.Provider>
 }

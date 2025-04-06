@@ -5,6 +5,7 @@ import scriptSchema from './script.schema.json';
 import { GameScript } from '@site/src/components/gameScriptComponents/scriptTypes';
 import Layout from '@theme/Layout';
 import scriptData from '@site/static/script.json';
+import { useLocation } from '@docusaurus/router';
 
 const ajv = new Ajv({
   formats: {
@@ -15,9 +16,13 @@ const validate = ajv.compile(scriptSchema);
 
 
 export default function Page({ }): ReactNode {
-  useEffect(() => {
-    // Load the script data from the JSON file
-  }, []);
+  // We represent the current state as a fragment of the URL.
+  const location = useLocation();
+
+  
+  if (location.hash) {
+    const hash = location.hash.substring(1);
+  }
   if (!scriptData) {
     return null;
   }
