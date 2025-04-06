@@ -1,10 +1,11 @@
-import { ReactNode, MouseEventHandler, useState, useRef, RefObject, Ref, RefCallback, useLayoutEffect, useCallback, createContext, useContext } from 'react';
+import { ReactNode, MouseEventHandler, useState, useRef, RefObject, Ref, RefCallback, useLayoutEffect, useCallback, createContext, useContext, forwardRef, ForwardedRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { GameScript, Room, Noun, Conversation, Line, RichText, TextPiece } from './scriptTypes';
 import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
+import { Tooltip } from '@mui/material';
 
 // Utility functions
 
@@ -88,6 +89,21 @@ function useOnUpdate<T>(value: T, onUpdate: (value: T) => void): void {
   }
 }
 
+function useScriptFont() {
+  useEffect(() => {
+    const scriptFontLink = document.getElementById('script-font');
+    if (scriptFontLink) {
+      return;
+    }
+
+    const link = document.createElement('link');
+    link.id = 'script-font';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
+    document.head.appendChild(link);
+  }, []);
+}
+
 // React contexts
 
 const ScriptData = createContext<GameScript | null>(null);
@@ -95,22 +111,18 @@ const ScriptData = createContext<GameScript | null>(null);
 // React components
 
 function Icon({ icon }: { icon: string }): ReactNode {
+  useScriptFont();
   return <span className={clsx(['material-symbols-outlined', scriptStyles['material-symbols-outlined']])}>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     {icon}
   </span>
 }
 
-function IconButton({
-  icon,
-  parentRef,
-  onClick
-}: {
+function IconButton({ icon, ref, onClick }: {
   icon: string,
-  parentRef?: RefCallback<HTMLElement>,
+  ref: Ref<HTMLDivElement>,
   onClick?: MouseEventHandler
 }): ReactNode {
-  return <div ref={parentRef} className={scriptStyles.button} onClick={onClick}>
+  return <div ref={ref} className={scriptStyles.button} onClick={onClick}>
     <Icon icon={icon} />
   </div>
 }
@@ -140,7 +152,6 @@ function Popup({ target, x, y, children }: {
   if (!isBrowser) {
     return null;
   }
-  console.log('Popup:', position.x, position.y);
 
   const popupLayer = createPopupLayer();
   if (!popupLayer) {
@@ -175,7 +186,7 @@ function CopyButton({ text }: { text: string }): ReactNode {
   return <>
     <IconButton
       icon="content_copy"
-      parentRef={parentRefCallback}
+      ref={parentRefCallback}
       onClick={isBrowser ? clickCallback : null}
     />
     {
