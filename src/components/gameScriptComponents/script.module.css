@@ -168,9 +168,10 @@
 }
 
 .sideMenu {
+  --header-height: 0px;
   position: sticky;
   top: 0; /* Stick to the top of the viewport */
-  max-height: calc(100vh - 44px); /* Limit height to viewport minus navbar */
+  max-height: calc(100vh - var(--header-height)); /* Limit height to viewport minus navbar */
   overflow-y: auto; /* Show scrollbar in sidebar when content overflows */
   padding-right: 10px; /* Space for scrollbar */
 }

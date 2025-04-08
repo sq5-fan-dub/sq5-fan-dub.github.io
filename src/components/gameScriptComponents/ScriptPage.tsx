@@ -333,11 +333,14 @@ function TableOfContents({ onRoleSelect, onRoomSelect }: {
   </div>;
 }
 
-export default function ScriptPage({ script, focus }: {
+export default function ScriptPage({ script, headerHeight, focus }: {
   script: GameScript,
+  headerHeight: number,
   focus?: string,
 }): ReactNode {
   const [viewState, setViewState] = useImmer<ScriptPageState>({ type: 'default' });
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
   useOnUpdate(focus, () => {
     if (!focus || focus === '') {
       setViewState({ type: 'default' });
@@ -385,8 +388,10 @@ export default function ScriptPage({ script, focus }: {
 
   return <ScriptData.Provider value={script}>
     <div className={scriptStyles.scriptWindow}>
-      <div className={scriptStyles.scriptSidebar}>
-        <div className={scriptStyles.sideMenu}>
+      <div className={scriptStyles.scriptSidebar} ref={sidebarRef}>
+        <div className={scriptStyles.sideMenu} style={{
+          ['--header-height' as any]: `${headerHeight}px`,
+        }}>
           <TableOfContents
             onRoleSelect={(role_id) => {
               console.log('Role selected:', role_id);
