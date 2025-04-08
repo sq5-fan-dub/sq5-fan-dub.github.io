@@ -5,7 +5,8 @@ import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
-import { Tooltip } from '@mui/material';
+import { useImmer } from 'use-immer';
+import { } from '@theme/Navbar';
 
 // Utility functions
 
@@ -13,20 +14,19 @@ import { Tooltip } from '@mui/material';
 // It also sorts the array based on a provided sorting function, if given.
 // The function takes an object, a mapping function, and an optional sorting function.
 // It returns an array of mapped values.
-function mapObject<T, R>(
+function getObjectEntries<T, R>(
   obj: { [k: string]: T },
-  func: (key: string, val: T) => R,
   sortKeyFn?: (a: T) => (number | string)
-): R[] {
-  type SortEntry = { key: string, val: T };
+): [T, string][] {
+  type SortEntry = [T, string];
   const entries: SortEntry[] = [];
   for (const key in obj) {
-    entries.push({ key, val: obj[key] });
+    entries.push([obj[key], key]);
   }
   if (sortKeyFn) {
     entries.sort((a, b) => {
-      const aKey = sortKeyFn(a.val);
-      const bKey = sortKeyFn(b.val);
+      const aKey = sortKeyFn(a[0]);
+      const bKey = sortKeyFn(b[0]);
       if (aKey < bKey) {
         return -1;
       }
@@ -36,7 +36,7 @@ function mapObject<T, R>(
       return 0;
     });
   }
-  return entries.map((entry) => func(entry.key, entry.val));
+  return entries;
 }
 
 const layerCache = new WeakMap<HTMLElement, HTMLDivElement>();
@@ -295,24 +295,49 @@ function RoleTable({ }): ReactNode {
     </thead>
     <tbody>
       {
-        mapObject(
-          script.roles,
-          ((role_id, role) => (
+        getObjectEntries(script.roles, a => a.name)
+          .map(([role, role_id]) =>
             <tr key={role_id} id={role_id}>
               <td>{role.name}</td>
               <td>{role.short_name}</td>
-            </tr>)),
-          (a) => a.name)
+            </tr>)
       }
     </tbody>
   </table>;
+}
+
+function TableOfContents({ onRoleSelect, onRoomSelect }: {
+  onRoleSelect?: (role_id: string) => void,
+  onRoomSelect?: (room_id: string) => void,
+}): ReactNode {
+  const script = useContext(ScriptData);
+  onRoleSelect = onRoleSelect || (() => { });
+  onRoomSelect = onRoomSelect || (() => { });
+
+  const roleEntries = getObjectEntries(script.roles, a => a.name)
+    .map(([role, role_id]) =>
+      <li key={role_id} id={role_id}>
+        <a className={scriptStyles.tocAnchor} onClick={() => onRoleSelect(role_id)}>{role.name}</a>
+      </li>);
+  const roomEntries = getObjectEntries(script.rooms, a => a.room_id)
+    .map(([room, room_id]) =>
+      <li key={room_id} id={room_id}>
+        <a className={scriptStyles.tocAnchor} onClick={() => onRoomSelect(room_id)}><RichTextElem richText={room.room_title} /></a>
+      </li>);
+
+  return <div>
+    <header>Roles</header>
+    <ul>{roleEntries}</ul>
+    <header>Rooms</header>
+    <ul>{roomEntries}</ul>
+  </div>;
 }
 
 export default function ScriptPage({ script, focus }: {
   script: GameScript,
   focus?: string,
 }): ReactNode {
-  const [viewState, setViewState] = useState<ScriptPageState>({ type: 'default' });
+  const [viewState, setViewState] = useImmer<ScriptPageState>({ type: 'default' });
   useOnUpdate(focus, () => {
     if (!focus || focus === '') {
       setViewState({ type: 'default' });
@@ -346,10 +371,10 @@ export default function ScriptPage({ script, focus }: {
       case 'nounFocus':
         return <NounElem noun_id={viewState.id} noun={script.nouns[viewState.id]} />;
       case 'default': {
-        const rooms = mapObject(
-          script.rooms,
-          ((room_id, room) => (<RoomElem key={room_id} room_id={room_id} room={room} />)),
-          (a) => a.room_id);
+        const rooms = getObjectEntries(script.rooms, a => a.room_id)
+          .map(([room, room_id]) =>
+            <RoomElem key={room_id} room_id={room_id} room={room} />
+          )
         return <div>
           <h2>Rooms</h2>
           {rooms}
@@ -359,12 +384,30 @@ export default function ScriptPage({ script, focus }: {
   })();
 
   return <ScriptData.Provider value={script}>
-    <ScriptPageStateContext.Provider value={[viewState, setViewState]}>
-      <div>
-        <h2>Roles</h2>
-        <RoleTable />
+    <div className={scriptStyles.scriptWindow}>
+      <div className={scriptStyles.scriptSidebar}>
+        <div className={scriptStyles.sideMenu}>
+          <TableOfContents
+            onRoleSelect={(role_id) => {
+              console.log('Role selected:', role_id);
+              // setViewState({ type: 'roomFocus', id: role_id });
+            }}
+            onRoomSelect={(room_id) => {
+              console.log('Room selected:', room_id);
+              // setViewState({ type: 'roomFocus', id: room_id });
+            }}
+          />
+        </div>
       </div>
-      {body}
-    </ScriptPageStateContext.Provider>
+      <div className={scriptStyles.scriptMain}>
+        <ScriptPageStateContext.Provider value={[viewState, setViewState]}>
+          <div>
+            <h2>Roles</h2>
+            <RoleTable />
+          </div>
+          {body}
+        </ScriptPageStateContext.Provider>
+      </div>
+    </div>
   </ScriptData.Provider>
 }

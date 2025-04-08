@@ -6,6 +6,9 @@ import { GameScript } from '@site/src/components/gameScriptComponents/scriptType
 import Layout from '@theme/Layout';
 import scriptData from '@site/static/script.json';
 import { useLocation } from '@docusaurus/router';
+import LayoutProvider from '@theme/Layout/Provider';
+import Navbar from '@theme/Navbar';
+import pageStyles from './page.module.css';
 
 const ajv = new Ajv({
   formats: {
@@ -19,7 +22,7 @@ export default function Page({ }): ReactNode {
   // We represent the current state as a fragment of the URL.
   const location = useLocation();
 
-  
+
   if (location.hash) {
     const hash = location.hash.substring(1);
   }
@@ -30,8 +33,14 @@ export default function Page({ }): ReactNode {
     console.error(validate.errors);
     throw new Error('Invalid script data');
   }
-  return (
-    <Layout>
-      <ScriptPage script={scriptData as GameScript} />
-    </Layout>)
+  return (<LayoutProvider>
+    <div className={pageStyles.screen}>
+      <div className={pageStyles.navBar}>
+        <Navbar />
+      </div>
+      <div className={pageStyles.main}>
+        <ScriptPage script={scriptData as GameScript} />
+      </div>
+    </div>
+  </LayoutProvider>)
 }

@@ -24,10 +24,12 @@
     "@types/react-dom": "^19.1.1",
     "ajv": "^8.17.1",
     "clsx": "^2.0.0",
+    "immer": "^10.1.1",
     "json-schema-to-typescript": "^15.0.4",
     "prism-react-renderer": "^2.3.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "use-immer": "^0.11.0"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.7.0",

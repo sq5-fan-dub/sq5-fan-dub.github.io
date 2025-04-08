@@ -144,3 +144,33 @@
   opacity: 1;
   pointer-events: none;
 }
+
+.tocAnchor {
+  cursor: pointer;
+}
+
+.scriptWindow {
+  display: flex;
+  flex-direction: row;
+  justify-content: stretch;
+  width: 100%;
+}
+
+.scriptSidebar {
+  flex: 0 0 280px;
+  position: relative; /* Create positioning context */
+}
+
+.scriptMain {
+  flex: 1;
+  display: block;
+  /* Remove overflow-y property to ensure natural page flow */
+}
+
+.sideMenu {
+  position: sticky;
+  top: 0; /* Stick to the top of the viewport */
+  max-height: calc(100vh - 44px); /* Limit height to viewport minus navbar */
+  overflow-y: auto; /* Show scrollbar in sidebar when content overflows */
+  padding-right: 10px; /* Space for scrollbar */
+}
