@@ -1,15 +1,13 @@
-import { DependencyList, ReactNode, useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import ScriptPage from '@site/src/components/gameScriptComponents/ScriptPage';
 import Ajv from 'ajv';
 import scriptSchema from './script.schema.json';
 import { GameScript } from '@site/src/components/gameScriptComponents/scriptTypes';
-import Layout from '@theme/Layout';
 import scriptData from '@site/static/script.json';
 import { useLocation } from '@docusaurus/router';
 import LayoutProvider from '@theme/Layout/Provider';
 import Navbar from '@theme/Navbar';
 import pageStyles from './page.module.css';
-import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 
 const ajv = new Ajv({
@@ -70,9 +68,9 @@ export default function Page({ }): ReactNode {
   const location = useLocation();
   const [headerSize, setHeaderRef] = useElementSize();
 
-
+  let hash = null;
   if (location.hash) {
-    const hash = location.hash.substring(1);
+    hash = location.hash.substring(1);
   }
   if (!scriptData) {
     return null;
@@ -87,7 +85,10 @@ export default function Page({ }): ReactNode {
         <Navbar />
       </div>
       <div className={pageStyles.main}>
-        <ScriptPage script={scriptData as GameScript} headerHeight={headerSize ? headerSize.height : 0} />
+        <ScriptPage
+          script={scriptData as GameScript}
+          headerHeight={headerSize ? headerSize.height : 0}
+          focus={hash} />
       </div>
     </div>
   </LayoutProvider>)

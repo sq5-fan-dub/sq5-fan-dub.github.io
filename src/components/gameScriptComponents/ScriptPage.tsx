@@ -1,12 +1,10 @@
-import { ReactNode, MouseEventHandler, useState, useRef, RefObject, Ref, RefCallback, useLayoutEffect, useCallback, createContext, useContext, forwardRef, ForwardedRef, useEffect } from 'react';
+import { ReactNode, MouseEventHandler, useState, useRef, RefObject, Ref, useLayoutEffect, useCallback, createContext, useContext, useEffect, EffectCallback, DependencyList } from 'react';
 import { createPortal } from 'react-dom';
 import { GameScript, Room, Noun, Conversation, Line, RichText, TextPiece } from './scriptTypes';
 import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
-import { useImmer } from 'use-immer';
-import { } from '@theme/Navbar';
 
 // Utility functions
 
@@ -60,18 +58,16 @@ function createPopupLayer(): HTMLDivElement | null {
 
 // Script Page State
 
-type ScriptPageState = {
+export type ScriptPageState = {
   type: 'roomFocus' | 'nounFocus';
   id: string;
 } | {
   type: 'default';
 }
 
-type ScriptPageStateUpdater = (state: ScriptPageState) => void;
+const ScriptPageStateContext = createContext<ScriptPageState | null>(null);
 
-const ScriptPageStateContext = createContext<[ScriptPageState, ScriptPageStateUpdater] | null>(null);
-
-function useScriptPageState(): [ScriptPageState, ScriptPageStateUpdater] {
+function useScriptPageState(): ScriptPageState {
   const state = useContext(ScriptPageStateContext);
   if (!state) {
     throw new Error('useScriptPageState must be used within a ScriptPageStateProvider');
@@ -87,6 +83,26 @@ function useOnUpdate<T>(value: T, onUpdate: (value: T) => void): void {
     setPrevValue(value);
     onUpdate(value);
   }
+}
+
+function useOnUpdateEffect<T>(value: T, onUpdateEffect: (value: T) => (void | (() => void)), deps?: DependencyList): void {
+  // We store the prevValue in a ref, so that we don't cause unnecessary updates.
+  interface PrevValue {
+    value: T;
+  }
+  const prevValueRef = useRef<PrevValue>(null);
+  useEffect(() => {
+    // We always want to run on the first render.
+    if (prevValueRef.current === null) {
+      prevValueRef.current = { value };
+    } else if (prevValueRef.current.value !== value) {
+      prevValueRef.current.value = value;
+    } else {
+      return;
+    }
+
+    return onUpdateEffect(value);
+  }, deps)
 }
 
 function useScriptFont() {
@@ -333,35 +349,32 @@ function TableOfContents({ onRoleSelect, onRoomSelect }: {
   </div>;
 }
 
-export default function ScriptPage({ script, headerHeight, focus }: {
+interface ScriptPageEventHandlers {
+  readonly onRoleSelect?: (role_id: string) => void;
+  readonly onRoomSelect?: (room_id: string) => void;
+}
+
+export default function ScriptPage({ script, headerHeight, focus, scriptState, handlers }: {
   script: GameScript,
   headerHeight: number,
   focus?: string,
+  scriptState?: ScriptPageState,
+  handlers?: ScriptPageEventHandlers
 }): ReactNode {
-  const [viewState, setViewState] = useImmer<ScriptPageState>({ type: 'default' });
-  const sidebarRef = useRef<HTMLDivElement>(null);
-
-  useOnUpdate(focus, () => {
-    if (!focus || focus === '') {
-      setViewState({ type: 'default' });
+  useOnUpdateEffect(focus, (focus) => {
+    if (!focus) {
+      console.log("No focus")
       return;
     }
-    const dashPos = focus.indexOf('-');
-    let focusType: string | null = null;
-    if (dashPos !== -1) {
-      focusType = focus.substring(0, dashPos);
+
+    const element = document.getElementById(focus);
+    if (!element) {
+      return;
     }
-    switch (focusType) {
-      case 'room':
-        setViewState({ type: 'roomFocus', id: focus });
-        break;
-      case 'noun':
-        setViewState({ type: 'nounFocus', id: focus });
-        break;
-      default:
-        throw new Error(`Unknown focus type: ${focusType}`);
-    }
-  });
+    element?.scrollIntoView();
+  })
+
+  const viewState = scriptState || { type: 'default' };
 
   if (!script) {
     return null;
@@ -388,24 +401,28 @@ export default function ScriptPage({ script, headerHeight, focus }: {
 
   return <ScriptData.Provider value={script}>
     <div className={scriptStyles.scriptWindow}>
-      <div className={scriptStyles.scriptSidebar} ref={sidebarRef}>
+      <div className={scriptStyles.scriptSidebar}>
         <div className={scriptStyles.sideMenu} style={{
           ['--header-height' as any]: `${headerHeight}px`,
         }}>
           <TableOfContents
             onRoleSelect={(role_id) => {
               console.log('Role selected:', role_id);
-              // setViewState({ type: 'roomFocus', id: role_id });
+              if (handlers?.onRoleSelect) {
+                handlers.onRoleSelect(role_id);
+              }
             }}
             onRoomSelect={(room_id) => {
               console.log('Room selected:', room_id);
-              // setViewState({ type: 'roomFocus', id: room_id });
+              if (handlers?.onRoomSelect) {
+                handlers.onRoomSelect(room_id);
+              }
             }}
           />
         </div>
       </div>
       <div className={scriptStyles.scriptMain}>
-        <ScriptPageStateContext.Provider value={[viewState, setViewState]}>
+        <ScriptPageStateContext.Provider value={viewState}>
           <div>
             <h2>Roles</h2>
             <RoleTable />
