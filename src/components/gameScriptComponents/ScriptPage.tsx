@@ -1,10 +1,9 @@
-import { ReactNode, MouseEventHandler, useState, useRef, RefObject, Ref, useLayoutEffect, useCallback, createContext, useContext, useEffect, EffectCallback, DependencyList } from 'react';
-import { createPortal } from 'react-dom';
+import { ReactNode, MouseEventHandler, useState, useRef, Ref, useCallback, createContext, useContext, useEffect, DependencyList } from 'react';
 import { GameScript, Room, Noun, Conversation, Line, RichText, TextPiece } from './scriptTypes';
 import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
-import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
+import { PopOver } from '../popper/popper';
 
 // Utility functions
 
@@ -37,25 +36,6 @@ function getObjectEntries<T, R>(
   return entries;
 }
 
-const layerCache = new WeakMap<HTMLElement, HTMLDivElement>();
-
-function createPopupLayer(): HTMLDivElement | null {
-  if (!ExecutionEnvironment.canUseDOM) {
-    return null;
-  }
-
-  if (layerCache.has(document.body)) {
-    return layerCache.get(document.body);
-  }
-
-  const popupLayer = document.createElement('div');
-  popupLayer.className = scriptStyles.popupLayer;
-  document.body.appendChild(popupLayer);
-  layerCache.set(document.body, popupLayer);
-  console.log('Popup layer created:', popupLayer);
-  return popupLayer;
-}
-
 // Script Page State
 
 export type ScriptPageState = {
@@ -76,14 +56,6 @@ function useScriptPageState(): ScriptPageState {
 }
 
 // React Hooks
-
-function useOnUpdate<T>(value: T, onUpdate: (value: T) => void): void {
-  const [prevValue, setPrevValue] = useState(value);
-  if (value !== prevValue) {
-    setPrevValue(value);
-    onUpdate(value);
-  }
-}
 
 function useOnUpdateEffect<T>(value: T, onUpdateEffect: (value: T) => (void | (() => void)), deps?: DependencyList): void {
   // We store the prevValue in a ref, so that we don't cause unnecessary updates.
@@ -143,53 +115,11 @@ function IconButton({ icon, ref, onClick }: {
   </div>
 }
 
-function Popup({ target, x, y, children }: {
-  target: RefObject<HTMLElement>,
-  x: number,
-  y: number,
-  children: ReactNode
-}): ReactNode {
-  const isBrowser = useIsBrowser();
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  useLayoutEffect(() => {
-    // If there is a current reference, get its position relative to document.body
-    if (!isBrowser) {
-      return;
-    }
-    const bodyRect = document.body.getBoundingClientRect();
-    const rect = target.current.getBoundingClientRect();
-    const x = rect.left - bodyRect.left;
-    const y = rect.top - bodyRect.top;
-
-    if (x !== position.x || y !== position.y) {
-      setPosition({ x, y });
-    }
-  }, [isBrowser, target.current]);
-  if (!isBrowser) {
-    return null;
-  }
-
-  const popupLayer = createPopupLayer();
-  if (!popupLayer) {
-    return null;
-  }
-
-  return createPortal(
-    <div
-      className={scriptStyles.popupBox}
-      style={{ left: position.x + x, top: position.y + y }}
-      children={children}
-    />, popupLayer);
-}
-
 function CopyButton({ text }: { text: string }): ReactNode {
   const isBrowser = useIsBrowser();
-  const buttonRef = useRef<HTMLElement>(null);
+  const [buttonRef, setButtonRef] = useState<HTMLElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const parentRefCallback = useCallback((ref: HTMLElement) => {
-    buttonRef.current = ref;
-  }, []);
   const clickCallback = useCallback(() => {
     navigator.clipboard.writeText(text).then(() => {
       setIsOpen(true);
@@ -202,13 +132,15 @@ function CopyButton({ text }: { text: string }): ReactNode {
   return <>
     <IconButton
       icon="content_copy"
-      ref={parentRefCallback}
+      ref={setButtonRef}
       onClick={isBrowser ? clickCallback : null}
     />
     {
-      isOpen && <Popup target={buttonRef} x={8} y={8}>
+      isOpen && <PopOver target={buttonRef} options={{
+        placement: 'bottom',
+      }}>
         <div className={scriptStyles.popup}>{`Copied ID To Clipboard: ${text}`}</div>
-      </Popup>
+      </PopOver>
     }
   </>;
 }
@@ -287,8 +219,9 @@ function NounElem({ noun_id, noun }: { noun_id: string, noun: Noun }): ReactNode
 
 function RoomElem({ room_id, room }: { room_id: string, room: Room }): ReactNode {
   const script = useContext(ScriptData);
+  let roomNum = room.room_id;
   return <div>
-    <h2><RichTextElem richText={room.room_title} /></h2>
+    <h2><RichTextElem richText={room.room_title} />&nbsp;<i>{`(Room #${roomNum}`})</i></h2>
     {
       room.nouns.map((noun_id) =>
         <NounElem
@@ -332,20 +265,24 @@ function TableOfContents({ onRoleSelect, onRoomSelect }: {
 
   const roleEntries = getObjectEntries(script.roles, a => a.name)
     .map(([role, role_id]) =>
-      <li key={role_id} id={role_id}>
-        <a className={scriptStyles.tocAnchor} onClick={() => onRoleSelect(role_id)}>{role.name}</a>
+      <li key={role_id} id={role_id} onClick={() => onRoleSelect(role_id)}>
+        {role.name}
       </li>);
   const roomEntries = getObjectEntries(script.rooms, a => a.room_id)
     .map(([room, room_id]) =>
-      <li key={room_id} id={room_id}>
-        <a className={scriptStyles.tocAnchor} onClick={() => onRoomSelect(room_id)}><RichTextElem richText={room.room_title} /></a>
+      <li key={room_id} id={room_id} onClick={() => onRoomSelect(room_id)}>
+        <RichTextElem richText={room.room_title} />
       </li>);
 
-  return <div>
-    <header>Roles</header>
-    <ul>{roleEntries}</ul>
-    <header>Rooms</header>
-    <ul>{roomEntries}</ul>
+  return <div className={scriptStyles.toc}>
+    <section>
+      <header>Roles</header>
+      <menu>{roleEntries}</menu>
+    </section>
+    <section>
+      <header>Rooms</header>
+      <menu>{roomEntries}</menu>
+    </section>
   </div>;
 }
 
