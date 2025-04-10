@@ -76,6 +76,10 @@ function useScriptFont() {
 
 const ScriptData = createContext<GameScript | null>(null);
 
+function useScriptData(): GameScript | null {
+  return useContext(ScriptData);
+}
+
 // React components
 
 function Icon({ icon }: { icon: string }): ReactNode {
@@ -152,7 +156,7 @@ function LineElem({ line }: { line: Line }): ReactNode {
   const script = useContext(ScriptData);
   return <div id={line.id} className={scriptStyles.line}>
     <div className={scriptStyles.speaker}>{script.roles[line.role].short_name}:</div>
-    <div className={scriptStyles['line-text']}>
+    <div className={scriptStyles.lineText}>
       <RichTextElem richText={line.text} />
       <ParentHoverReveal><CopyButton text={line.id} /></ParentHoverReveal>
     </div>
@@ -164,12 +168,10 @@ function ConversationElem({ conversation_id, conversation }: { conversation_id: 
     <div className={scriptStyles.verb}>{conversation.verb || <i>Any</i>}</div>
     <div className={scriptStyles.cond}>{conversation.cond || <i>Any</i>}</div>
     <div className={scriptStyles.conv}>
-      <div className={scriptStyles.dialogue}>
-        {
-          conversation.lines.map((line) =>
-            <LineElem key={line.id} line={line} />)
-        }
-      </div>
+      {
+        conversation.lines.map((line) =>
+          <LineElem key={line.id} line={line} />)
+      }
     </div>
   </div>;
 }
@@ -231,7 +233,7 @@ function TableOfContents({ onRoleSelect, onRoomSelect }: {
   onRoleSelect?: (role_id: string) => void,
   onRoomSelect?: (room_id: string) => void,
 }): ReactNode {
-  const script = useContext(ScriptData);
+  const script = useScriptData();
   onRoleSelect = onRoleSelect || (() => { });
   onRoomSelect = onRoomSelect || (() => { });
 
