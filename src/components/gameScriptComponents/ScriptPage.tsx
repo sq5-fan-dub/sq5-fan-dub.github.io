@@ -1,9 +1,10 @@
-import { ReactNode, MouseEventHandler, useState, useRef, Ref, useCallback, createContext, useContext, useEffect, DependencyList } from 'react';
+import { ReactNode, MouseEventHandler, useState, useRef, Ref, useCallback, createContext, useContext, useEffect, DependencyList, Suspense } from 'react';
 import { GameScript, Room, Noun, Conversation, Line, RichText, TextPiece } from './scriptTypes';
 import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import { PopOver } from '../popper/popper';
+import { produce } from 'immer';
 
 // Utility functions
 
@@ -38,11 +39,8 @@ function getObjectEntries<T, R>(
 
 // Script Page State
 
-export type ScriptPageState = {
-  type: 'roomFocus' | 'nounFocus';
-  id: string;
-} | {
-  type: 'default';
+export interface ScriptPageState {
+  focuses?: TocFocuses;
 }
 
 const ScriptPageStateContext = createContext<ScriptPageState | null>(null);
@@ -176,8 +174,9 @@ function ConversationElem({ conversation_id, conversation }: { conversation_id: 
   </div>;
 }
 
-function NounElem({ noun_id, noun }: { noun_id: string, noun: Noun }): ReactNode {
+function NounElem({ noun_id }: { noun_id: string, noun: Noun }): ReactNode {
   const script = useContext(ScriptData);
+  const noun = script.nouns[noun_id];
   return <section className={scriptStyles.noun} id={noun_id}>
     <header className={scriptStyles.title}><RichTextElem richText={noun.noun_title} /><CopyButton text={noun_id} /></header>
     {
@@ -191,8 +190,9 @@ function NounElem({ noun_id, noun }: { noun_id: string, noun: Noun }): ReactNode
   </section>
 }
 
-function RoomElem({ room_id, room }: { room_id: string, room: Room }): ReactNode {
+function RoomElem({ room_id }: { room_id: string, room: Room }): ReactNode {
   const script = useContext(ScriptData);
+  const room = script.rooms[room_id];
   let roomNum = room.room_id;
   return <section className={scriptStyles.room} id={room_id}>
     <header><RichTextElem richText={room.room_title} />&nbsp;<i>{`(Room #${roomNum})`}</i><CopyButton text={room_id} /></header>
@@ -229,11 +229,20 @@ function RoleTable({ }): ReactNode {
   </table>;
 }
 
-function TableOfContents({ onRoleSelect, onRoomSelect }: {
+export interface TocFocuses {
+  readonly role_id?: string;
+  readonly room_id?: string;
+};
+
+function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSelect }: {
+  focuses?: TocFocuses,
+  onFocusClose?: (field: 'role_id' | 'room_id') => void,
   onRoleSelect?: (role_id: string) => void,
   onRoomSelect?: (room_id: string) => void,
 }): ReactNode {
   const script = useScriptData();
+  focuses = focuses || {};
+  onFocusClose = onFocusClose || (() => { });
   onRoleSelect = onRoleSelect || (() => { });
   onRoomSelect = onRoomSelect || (() => { });
 
@@ -249,6 +258,22 @@ function TableOfContents({ onRoleSelect, onRoomSelect }: {
       </li>);
 
   return <div className={scriptStyles.toc}>
+    {
+      focuses.role_id &&
+      <div className={scriptStyles.focusItem}>
+        <span>Role:</span>
+        <span>{script.roles[focuses.role_id].name}</span>
+        <button onClick={() => onFocusClose('role_id')}>X</button>
+      </div>
+    }
+    {
+      focuses.room_id &&
+      <div className={scriptStyles.focusItem}>
+        <span>Room:</span>
+        <span><RichTextElem richText={script.rooms[focuses.room_id].room_title} /></span>
+        <button onClick={() => onFocusClose('room_id')}>X</button>
+      </div>
+    }
     <section>
       <header>Roles</header>
       <menu>{roleEntries}</menu>
@@ -265,51 +290,76 @@ interface ScriptPageEventHandlers {
   readonly onRoomSelect?: (room_id: string) => void;
 }
 
-export default function ScriptPage({ script, headerHeight, focus, scriptState, handlers }: {
+export default function ScriptPage({ script, headerHeight, fragment, handlers }: {
   script: GameScript,
   headerHeight: number,
-  focus?: string,
-  scriptState?: ScriptPageState,
+  fragment?: string,
   handlers?: ScriptPageEventHandlers
 }): ReactNode {
   useEffect(() => {
-    if (!focus) {
-      console.log("No focus")
+    if (!fragment) {
+      console.log("No fragment")
       return;
     }
 
-    const element = document.getElementById(focus);
+    const element = document.getElementById(fragment);
     if (!element) {
       return;
     }
     element?.scrollIntoView();
-  }, [focus])
-
-  const viewState = scriptState || { type: 'default' };
+  }, [fragment])
+  const [scriptState, setScriptState] = useState<ScriptPageState | null>({});
+  const onFocusClose = useCallback((field: 'role_id' | 'room_id') => {
+    switch (field) {
+      case 'role_id':
+        setScriptState(produce(draft => {
+          draft.focuses = draft.focuses || {};
+          draft.focuses.role_id = null;
+        }));
+        break;
+      case 'room_id':
+        setScriptState(produce(draft => {
+          draft.focuses = draft.focuses || {};
+          draft.focuses.room_id = null;
+        }));
+        break;
+    }
+  }, []);
+  const onRoleSelect = useCallback((role_id: string) => {
+    setScriptState(produce(draft => {
+      draft.focuses = draft.focuses || {};
+      draft.focuses.role_id = role_id;
+    }));
+  }, []);
+  const onRoomSelect = useCallback((room_id: string) => {
+    setScriptState(produce(draft => {
+      draft.focuses = draft.focuses || {};
+      draft.focuses.room_id = room_id;
+    }));
+  }, []);
 
   if (!script) {
     return null;
   }
 
   const body = (() => {
-    switch (viewState.type) {
-      case 'roomFocus':
-        return <RoomElem room_id={viewState.id} room={script.rooms[viewState.id]} />;
-      case 'nounFocus':
-        return <NounElem noun_id={viewState.id} noun={script.nouns[viewState.id]} />;
-      case 'default': {
-        const rooms = getObjectEntries(script.rooms, a => a.room_id)
-          .map(([room, room_id]) =>
-            <RoomElem key={room_id} room_id={room_id} room={room} />
-          )
-        return <>
-          <h2>Rooms</h2>
-          <div className={scriptStyles.scriptGrid}>
-            {rooms}
-          </div>
-        </>;
-      }
+    if (scriptState.focuses?.room_id) {
+      return <RoomElem room_id={scriptState.focuses.room_id} room={script.rooms[scriptState.focuses.room_id]} />;
+    } else if (scriptState.focuses?.role_id) {
+      return <p> This is what a role would look like! {scriptState.focuses.role_id}</p>;
+    } else {
+      const rooms = getObjectEntries(script.rooms, a => a.room_id)
+        .map(([room, room_id]) =>
+          <RoomElem key={room_id} room_id={room_id} room={room} />
+        )
+      return <>
+        <h2>Rooms</h2>
+        <div className={scriptStyles.scriptGrid}>
+          {rooms}
+        </div>
+      </>;
     }
+
   })();
 
   return <ScriptData.Provider value={script}>
@@ -319,23 +369,15 @@ export default function ScriptPage({ script, headerHeight, focus, scriptState, h
           ['--header-height' as any]: `${headerHeight}px`,
         }}>
           <TableOfContents
-            onRoleSelect={(role_id) => {
-              console.log('Role selected:', role_id);
-              if (handlers?.onRoleSelect) {
-                handlers.onRoleSelect(role_id);
-              }
-            }}
-            onRoomSelect={(room_id) => {
-              console.log('Room selected:', room_id);
-              if (handlers?.onRoomSelect) {
-                handlers.onRoomSelect(room_id);
-              }
-            }}
+            focuses={scriptState.focuses || {}}
+            onFocusClose={onFocusClose}
+            onRoleSelect={onRoleSelect}
+            onRoomSelect={onRoomSelect}
           />
         </div>
       </div>
       <div className={scriptStyles.scriptMain}>
-        <ScriptPageStateContext.Provider value={viewState}>
+        <ScriptPageStateContext.Provider value={scriptState}>
           <div>
             <h2>Roles</h2>
             <RoleTable />

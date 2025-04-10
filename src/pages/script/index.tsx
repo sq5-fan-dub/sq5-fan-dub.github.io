@@ -88,7 +88,7 @@ export default function Page({ }): ReactNode {
         <ScriptPage
           script={scriptData as GameScript}
           headerHeight={headerSize ? headerSize.height : 0}
-          focus={hash} />
+          fragment={hash} />
       </div>
     </div>
   </LayoutProvider>)
