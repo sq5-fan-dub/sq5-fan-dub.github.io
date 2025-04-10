@@ -57,26 +57,6 @@ function useScriptPageState(): ScriptPageState {
 
 // React Hooks
 
-function useOnUpdateEffect<T>(value: T, onUpdateEffect: (value: T) => (void | (() => void)), deps?: DependencyList): void {
-  // We store the prevValue in a ref, so that we don't cause unnecessary updates.
-  interface PrevValue {
-    value: T;
-  }
-  const prevValueRef = useRef<PrevValue>(null);
-  useEffect(() => {
-    // We always want to run on the first render.
-    if (prevValueRef.current === null) {
-      prevValueRef.current = { value };
-    } else if (prevValueRef.current.value !== value) {
-      prevValueRef.current.value = value;
-    } else {
-      return;
-    }
-
-    return onUpdateEffect(value);
-  }, deps)
-}
-
 function useScriptFont() {
   useEffect(() => {
     const scriptFontLink = document.getElementById('script-font');
@@ -180,32 +160,24 @@ function LineElem({ line }: { line: Line }): ReactNode {
 }
 
 function ConversationElem({ conversation_id, conversation }: { conversation_id: string, conversation: Conversation }): ReactNode {
-  return <div id={conversation_id}>
-    {
-      conversation.verb &&
-      <div>
-        <b>Verb: </b> {conversation.verb}
+  return <div className={scriptStyles.convSet} id={conversation_id}>
+    <div className={scriptStyles.verb}>{conversation.verb || <i>Any</i>}</div>
+    <div className={scriptStyles.cond}>{conversation.cond || <i>Any</i>}</div>
+    <div className={scriptStyles.conv}>
+      <div className={scriptStyles.dialogue}>
+        {
+          conversation.lines.map((line) =>
+            <LineElem key={line.id} line={line} />)
+        }
       </div>
-    }
-    {
-      conversation.cond &&
-      <div>
-        <b>Condition: </b> {conversation.cond}
-      </div>
-    }
-    <div className={scriptStyles.dialogue}>
-      {
-        conversation.lines.map((line) =>
-          <LineElem key={line.id} line={line} />)
-      }
     </div>
-  </div>
+  </div>;
 }
 
 function NounElem({ noun_id, noun }: { noun_id: string, noun: Noun }): ReactNode {
   const script = useContext(ScriptData);
-  return <div id={noun_id}>
-    <h3><RichTextElem richText={noun.noun_title} /></h3>
+  return <section className={scriptStyles.noun} id={noun_id}>
+    <header className={scriptStyles.title}><RichTextElem richText={noun.noun_title} /><CopyButton text={noun_id} /></header>
     {
       noun.conversations.map((conversation_id) =>
         <ConversationElem
@@ -214,14 +186,14 @@ function NounElem({ noun_id, noun }: { noun_id: string, noun: Noun }): ReactNode
           conversation={script.conversations[conversation_id]}
         />)
     }
-  </div>
+  </section>
 }
 
 function RoomElem({ room_id, room }: { room_id: string, room: Room }): ReactNode {
   const script = useContext(ScriptData);
   let roomNum = room.room_id;
-  return <div>
-    <h2><RichTextElem richText={room.room_title} />&nbsp;<i>{`(Room #${roomNum}`})</i></h2>
+  return <section className={scriptStyles.room} id={room_id}>
+    <header><RichTextElem richText={room.room_title} />&nbsp;<i>{`(Room #${roomNum})`}</i><CopyButton text={room_id} /></header>
     {
       room.nouns.map((noun_id) =>
         <NounElem
@@ -230,7 +202,7 @@ function RoomElem({ room_id, room }: { room_id: string, room: Room }): ReactNode
           noun={script.nouns[noun_id]}
         />)
     }
-  </div>
+  </section>
 }
 
 function RoleTable({ }): ReactNode {
@@ -298,7 +270,7 @@ export default function ScriptPage({ script, headerHeight, focus, scriptState, h
   scriptState?: ScriptPageState,
   handlers?: ScriptPageEventHandlers
 }): ReactNode {
-  useOnUpdateEffect(focus, (focus) => {
+  useEffect(() => {
     if (!focus) {
       console.log("No focus")
       return;
@@ -309,7 +281,7 @@ export default function ScriptPage({ script, headerHeight, focus, scriptState, h
       return;
     }
     element?.scrollIntoView();
-  })
+  }, [focus])
 
   const viewState = scriptState || { type: 'default' };
 
@@ -328,10 +300,12 @@ export default function ScriptPage({ script, headerHeight, focus, scriptState, h
           .map(([room, room_id]) =>
             <RoomElem key={room_id} room_id={room_id} room={room} />
           )
-        return <div>
+        return <>
           <h2>Rooms</h2>
-          {rooms}
-        </div>;
+          <div className={scriptStyles.scriptGrid}>
+            {rooms}
+          </div>
+        </>;
       }
     }
   })();
