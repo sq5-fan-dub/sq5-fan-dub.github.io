@@ -1,6 +1,6 @@
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import { createPopper, Options as PopperOptions, } from '@popperjs/core';
-import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 export type PortalFunction = (element: ReactNode) => ReactNode;

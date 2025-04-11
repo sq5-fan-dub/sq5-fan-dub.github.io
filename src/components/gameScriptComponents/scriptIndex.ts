@@ -175,9 +175,6 @@ class NounImpl implements Noun {
 class ConversationImpl implements Conversation {
   lines: Line[];
   roles: Role[];
-  containsRole(roleId: string): boolean {
-    throw new Error("Method not implemented.");
-  }
 
   constructor(
     public scriptIndex: ScriptIndex,
@@ -190,6 +187,10 @@ class ConversationImpl implements Conversation {
   ) {
     this.lines = [];
     this.roles = [];
+  }
+
+  containsRole(roleId: string): boolean {
+    return this.roles.some((role) => role.id === roleId);
   }
 }
 

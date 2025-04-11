@@ -1,10 +1,11 @@
 import { ReactNode, MouseEventHandler, useState, useRef, Ref, useCallback, createContext, useContext, useEffect, DependencyList, Suspense, useMemo } from 'react';
-import { GameScript, Room, Noun, Conversation, Line, RichText, TextPiece } from './scriptTypes';
+import { GameScript, RichText, TextPiece } from './scriptTypes';
 import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import { PopOver } from '../popper/popper';
 import { produce } from 'immer';
+import { Conversation, createIndex, Line, ScriptIndex } from './scriptIndex';
 
 // Utility functions
 
@@ -41,16 +42,16 @@ function getObjectEntries<T, R>(
   return entries;
 }
 
-function objGroupBy<T>(items: T[], keyFn: (item: T) => string): { [k: string]: T[] } {
-  const result = Object.create(null);
+function objGroupBy<T, K>(items: T[], keyFn: (item: T) => K): [K, T[]][] {
+  const itemMap = new Map<K, T[]>();
   for (const item of items) {
     const key = keyFn(item);
-    if (!result[key]) {
-      result[key] = [];
+    if (!itemMap.has(key)) {
+      itemMap.set(key, []);
     }
-    result[key].push(item);
+    itemMap.get(key).push(item);
   }
-  return result;
+  return Array.from(itemMap.entries());
 }
 
 // Script Page State
@@ -88,9 +89,9 @@ function useScriptFont() {
 
 // React contexts
 
-const ScriptData = createContext<GameScript | null>(null);
+const ScriptData = createContext<ScriptIndex | null>(null);
 
-function useScriptData(): GameScript | null {
+function useScriptData(): ScriptIndex | null {
   return useContext(ScriptData);
 }
 
@@ -169,7 +170,7 @@ function RichTextElem({ richText }: { richText: RichText }): ReactNode {
 function LineElem({ line }: { line: Line }): ReactNode {
   const script = useContext(ScriptData);
   return <div id={line.id} className={scriptStyles.line}>
-    <div className={scriptStyles.speaker}>{script.roles[line.role].short_name}:</div>
+    <div className={scriptStyles.speaker}>{line.role.shortName}:</div>
     <div className={scriptStyles.lineText}>
       <RichTextElem richText={line.text} />
       <ParentHoverReveal><CopyButton text={line.id} /></ParentHoverReveal>
@@ -177,81 +178,36 @@ function LineElem({ line }: { line: Line }): ReactNode {
   </div>
 }
 
-function ConversationElem({ conversation_id }: { conversation_id: string }): ReactNode {
-  const script = useScriptData();
-  const conversation = script.conversations[conversation_id]
-  return <div className={scriptStyles.convSet} id={conversation_id}>
-    <div className={scriptStyles.verb}>{conversation.verb || <i>Any</i>}</div>
-    <div className={scriptStyles.cond}>{conversation.cond || <i>Any</i>}</div>
+function ConversationElem({ conv }: { conv: Conversation }): ReactNode {
+  return <div className={scriptStyles.convSet} id={conv.id}>
+    <div className={scriptStyles.verb}>{conv.verb || <i>Any</i>}</div>
+    <div className={scriptStyles.cond}>{conv.cond || <i>Any</i>}</div>
     <div className={scriptStyles.conv}>
       {
-        conversation.lines.map((line) =>
+        conv.lines.map((line) =>
           <LineElem key={line.id} line={line} />)
       }
     </div>
   </div>;
 }
 
-function NounElem({ noun_id }: { noun_id: string }): ReactNode {
-  const script = useContext(ScriptData);
-  const noun = script.nouns[noun_id];
-  return <section className={scriptStyles.noun} id={noun_id}>
-    <header className={scriptStyles.title}><RichTextElem richText={noun.noun_title} /><CopyButton text={noun_id} /></header>
-    {
-      noun.conversations.map((conversation_id) =>
-        <ConversationElem
-          key={conversation_id}
-          conversation_id={conversation_id}
-        />)
-    }
-  </section>
-}
-
-function RoomElem({ room_id }: { room_id: string }): ReactNode {
-  const script = useContext(ScriptData);
-  const room = script.rooms[room_id];
-  let roomNum = room.room_id;
-  return <section className={scriptStyles.room} id={room_id}>
-    <header><RichTextElem richText={room.room_title} />&nbsp;<i>{`(Room #${roomNum})`}</i><CopyButton text={room_id} /></header>
-    {
-      room.nouns.map((noun_id) =>
-        <NounElem
-          key={noun_id}
-          noun_id={noun_id}
-        />)
-    }
-  </section>
-}
-
-function ScriptLayout({ conversations }: { conversations: string[] }): ReactNode {
-  const script = useContext(ScriptData);
-  const convEntries = conversations.map((conversation_id) => {
-    const noun_id = script.conversations[conversation_id].noun;
-    const room_id = script.nouns[noun_id].room_id;
-    return {
-      room_id,
-      noun_id,
-      conversation_id,
-    }
-  });
-  const entryNodes = getObjectEntries(objGroupBy(convEntries, a => a.room_id),
-    (_, k) => script.rooms[k].room_id).map(([convEntries, room_id]) => {
-      const room = script.rooms[room_id];
-      const roomTitle = <div key={room_id} className={scriptStyles.roomTitle}>
-        <RichTextElem richText={room.room_title} />
+function ScriptLayout({ convs }: { convs: Conversation[] }): ReactNode {
+  const scriptIndex = useScriptData();
+  const entryNodes = sortBy(objGroupBy(convs, a => a.parentRoom),
+    ([room, _]) => room.num).map(([room, convs]) => {
+      const roomTitle = <div key={room.id} className={scriptStyles.roomTitle}>
+        <RichTextElem richText={room.title} />
       </div>
-      const nounNodes = getObjectEntries(objGroupBy(convEntries, a => a.noun_id),
-        (_, k) => script.nouns[k].noun_id).map(([convEntries, noun_id]) => {
-          const nounTitle = <div key={noun_id} className={scriptStyles.nounTitle}>
-            <RichTextElem richText={script.nouns[noun_id].noun_title} />
+      const nounNodes = sortBy(objGroupBy(convs, a => a.parentNoun),
+        ([noun, _]) => noun.num).map(([noun, convs]) => {
+          const nounTitle = <div key={noun.id} className={scriptStyles.nounTitle}>
+            <RichTextElem richText={noun.title} />
           </div>
 
-          const conversations = sortBy(convEntries.map((convEntry) => {
-            return convEntry.conversation_id;
-          }), convId => script.conversations[convId].conv_id).map((conv_id) => {
+          const conversations = sortBy(convs, conv => conv.num).map((conv) => {
             return <ConversationElem
-              key={conv_id}
-              conversation_id={conv_id}
+              key={conv.id}
+              conv={conv}
             />
           })
 
@@ -278,7 +234,7 @@ function RoleTable({ }): ReactNode {
           .map(([role, role_id]) =>
             <tr key={role_id} id={role_id}>
               <td>{role.name}</td>
-              <td>{role.short_name}</td>
+              <td>{role.shortName}</td>
             </tr>)
       }
     </tbody>
@@ -307,10 +263,10 @@ function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSelect }: 
       <li key={role_id} id={role_id} onClick={() => onRoleSelect(role_id)}>
         {role.name}
       </li>);
-  const roomEntries = getObjectEntries(script.rooms, a => a.room_id)
-    .map(([room, room_id]) =>
-      <li key={room_id} id={room_id} onClick={() => onRoomSelect(room_id)}>
-        <RichTextElem richText={room.room_title} />
+  const roomEntries = sortBy(Object.values(script.rooms), a => a.num)
+    .map((room) =>
+      <li key={room.id} id={room.id} onClick={() => onRoomSelect(room.id)}>
+        <RichTextElem richText={room.title} />
       </li>);
 
   return <div className={scriptStyles.toc}>
@@ -326,7 +282,7 @@ function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSelect }: 
       focuses.room_id &&
       <div className={scriptStyles.focusItem}>
         <span>Room:</span>
-        <span><RichTextElem richText={script.rooms[focuses.room_id].room_title} /></span>
+        <span><RichTextElem richText={script.rooms[focuses.room_id].title} /></span>
         <button onClick={() => onFocusClose('room_id')}>X</button>
       </div>
     }
@@ -394,27 +350,23 @@ export default function ScriptPage({ script, headerHeight, fragment, handlers }:
     }));
   }, []);
 
+  const scriptIndex = useMemo(() => createIndex(script), [script]);
+
   const conversations = useMemo(() => {
     if (!script) {
       return [];
     }
 
-    let conversations = Object.keys(script.conversations);
+    let conversations = Object.values(scriptIndex.conversations);
     if (scriptState.focuses?.room_id) {
-      conversations = conversations.filter((conv_id) => {
-        const room_id = script.nouns[script.conversations[conv_id].noun].room_id;
-        return room_id === scriptState.focuses.room_id;
+      conversations = conversations.filter(conv => {
+        return conv.parentRoom.id === scriptState.focuses.room_id;
       });
     }
 
     if (scriptState.focuses?.role_id) {
-      conversations = conversations.filter((conv_id) => {
-        for (const line of script.conversations[conv_id].lines) {
-          if (line.role === scriptState.focuses.role_id) {
-            return true;
-          }
-        }
-        return false;
+      conversations = conversations.filter(conv => {
+        return conv.containsRole(scriptState.focuses.role_id);
       });
     }
     return conversations;
@@ -424,9 +376,9 @@ export default function ScriptPage({ script, headerHeight, fragment, handlers }:
     return null;
   }
 
-  const body = <ScriptLayout conversations={conversations} />;
+  const body = <ScriptLayout convs={conversations} />;
 
-  return <ScriptData.Provider value={script}>
+  return <ScriptData.Provider value={scriptIndex}>
     <div className={scriptStyles.scriptWindow}>
       <div className={scriptStyles.scriptSidebar}>
         <div className={scriptStyles.sideMenu} style={{
