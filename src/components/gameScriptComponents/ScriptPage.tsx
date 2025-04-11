@@ -144,7 +144,13 @@ function CopyButton({ text }: { text: string }): ReactNode {
   </>;
 }
 
-function ParentHoverReveal({ children }: { children: ReactNode }): ReactNode {
+function IdControls({ id }: { id: string }): ReactNode {
+  return <ParentHoverReveal>
+    <CopyButton text={id} />
+  </ParentHoverReveal>
+}
+
+function ParentHoverReveal({ children }: { children?: ReactNode }): ReactNode {
   return <div className={scriptStyles['hover-reveal']}>
     {children}
   </div>
@@ -172,8 +178,7 @@ function LineElem({ line }: { line: Line }): ReactNode {
   return <div id={line.id} className={scriptStyles.line}>
     <div className={scriptStyles.speaker}>{line.role.shortName}:</div>
     <div className={scriptStyles.lineText}>
-      <RichTextElem richText={line.text} />
-      <ParentHoverReveal><CopyButton text={line.id} /></ParentHoverReveal>
+      <RichTextElem richText={line.text} /><IdControls id={line.id} />
     </div>
   </div>
 }
@@ -192,29 +197,30 @@ function ConversationElem({ conv }: { conv: Conversation }): ReactNode {
 }
 
 function ScriptLayout({ convs }: { convs: Conversation[] }): ReactNode {
-  const scriptIndex = useScriptData();
   const entryNodes = sortBy(objGroupBy(convs, a => a.parentRoom),
     ([room, _]) => room.num).map(([room, convs]) => {
-      const roomTitle = <div key={room.id} className={scriptStyles.roomTitle}>
-        <RichTextElem richText={room.title} />
-      </div>
-      const nounNodes = sortBy(objGroupBy(convs, a => a.parentNoun),
+      const nounElems = sortBy(objGroupBy(convs, a => a.parentNoun),
         ([noun, _]) => noun.num).map(([noun, convs]) => {
-          const nounTitle = <div key={noun.id} className={scriptStyles.nounTitle}>
-            <RichTextElem richText={noun.title} />
-          </div>
-
-          const conversations = sortBy(convs, conv => conv.num).map((conv) => {
+          const convElems = sortBy(convs, conv => conv.num).map((conv) => {
             return <ConversationElem
               key={conv.id}
               conv={conv}
             />
-          })
-
-          return [nounTitle, ...conversations]
+          });
+          return <section key={noun.id} id={noun.id} className={scriptStyles.noun}>
+            <header>
+              <RichTextElem richText={noun.title} /><IdControls id={noun.id} />
+            </header>
+            {convElems}
+          </section>
         }).flat()
 
-      return [roomTitle, ...nounNodes]
+      return <section key={room.id} id={room.id} className={scriptStyles.room}>
+        <header>
+          <RichTextElem richText={room.title} /><IdControls id={room.id} />
+        </header>
+        {nounElems}
+      </section>
     }).flat()
   return <div className={scriptStyles.scriptGrid} children={entryNodes} />
 }
