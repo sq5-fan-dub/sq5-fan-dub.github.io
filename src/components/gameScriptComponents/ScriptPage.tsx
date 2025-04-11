@@ -1,4 +1,4 @@
-import { ReactNode, MouseEventHandler, useState, useRef, Ref, useCallback, createContext, useContext, useEffect, DependencyList, Suspense, useMemo } from 'react';
+import { ReactNode, MouseEventHandler, useState, Ref, useCallback, createContext, useContext, useEffect, useMemo } from 'react';
 import { GameScript, RichText, TextPiece } from './scriptTypes';
 import scriptStyles from './script.module.css';
 import clsx from 'clsx';
@@ -58,16 +58,6 @@ function objGroupBy<T, K>(items: T[], keyFn: (item: T) => K): [K, T[]][] {
 
 export interface ScriptPageState {
   focuses?: TocFocuses;
-}
-
-const ScriptPageStateContext = createContext<ScriptPageState | null>(null);
-
-function useScriptPageState(): ScriptPageState {
-  const state = useContext(ScriptPageStateContext);
-  if (!state) {
-    throw new Error('useScriptPageState must be used within a ScriptPageStateProvider');
-  }
-  return state;
 }
 
 // React Hooks
@@ -399,13 +389,11 @@ export default function ScriptPage({ script, headerHeight, fragment, handlers }:
         </div>
       </div>
       <div className={scriptStyles.scriptMain}>
-        <ScriptPageStateContext.Provider value={scriptState}>
-          <div>
-            <h2>Roles</h2>
-            <RoleTable />
-          </div>
-          {body}
-        </ScriptPageStateContext.Provider>
+        <div>
+          <h2>Roles</h2>
+          <RoleTable />
+        </div>
+        {body}
       </div>
     </div>
   </ScriptData.Provider>
