@@ -178,30 +178,18 @@
   grid-template-columns:
     [roomStart] 10px [nounStart] 10px [convSetStart verbStart] fit-content(100px) [verbEnd condStart] fit-content(100px) [condEnd convStart speakerStart] max-content [speakerEnd lineTextStart] minmax(min-content, 36em) [lineTextEnd convEnd convSetEnd nounEnd roomEnd];
 
-  .room {
+  .roomTitle {
     grid-column: roomStart / roomEnd;
-    display: grid;
-    grid-template-columns: subgrid;
-
-    >header {
-      grid-column: roomStart / roomEnd;
-      margin: 0px;
-      padding-top: 0.5em;
-      padding-bottom: 0.5em;
-    }
+    margin: 0px;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
   }
 
-  .noun {
+  .nounTitle {
     grid-column: nounStart / nounEnd;
-    display: grid;
-    grid-template-columns: subgrid;
-
-    >header {
-      grid-column: nounStart / nounEnd;
-      margin: 0px;
-      padding-top: 0.5em;
-      padding-bottom: 0.5em;
-    }
+    margin: 0px;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
   }
 
   .convSet {

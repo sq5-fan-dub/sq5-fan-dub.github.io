@@ -22,6 +22,7 @@ export interface GameScript {
 }
 export interface Conversation {
   cond?: string | null;
+  conv_id: number;
   lines: Line[];
   noun: string;
   verb?: string | null;
