@@ -1,5 +1,5 @@
 ---
-title: Project Introduction
+title: About the Project
 sidebar_position: 1
 ---
 
@@ -41,6 +41,6 @@ Take a look at the [Contributing](./project/contributing.md) page if you want to
 
 ## Is this an official project?
 
-HAHAHAHA! HAhaHAhahahaHA! Oh man, that's rich.
+HAHAHAHA! HAhaHAhahahaHA! *\*sniff\** Oh man, that's rich.
 
 No. No, not in the slightest. We are simply a group of fans of the game that want to see this done.
