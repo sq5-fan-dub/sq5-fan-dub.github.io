@@ -5,8 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'The Space Quest 5 Fan Dub!',
-  tagline: 'Dinosaurs are cool',
+  title: 'The Space Quest 5: Re-Mutilated Project',
+  tagline: 'Giving Roger a Voice (for some reason)',
   favicon: 'sq5-fan-dub/img/favicon.ico',
 
   // Set the production url of your site here

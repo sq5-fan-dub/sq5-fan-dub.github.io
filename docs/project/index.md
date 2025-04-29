@@ -32,4 +32,3 @@ There two layers of implementation for this project: The modifications needed to
 We measure progress on a milestone-by-milestone basis. We do not create official deadlines for any but the next milestone in the list, but always hope to have at least two milestones described to give us a general guideline of what we have yet to do.
 
 Milestones will be documented on a separate page.
-

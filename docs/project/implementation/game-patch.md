@@ -1,10 +1,8 @@
 ---
-title: Game Patch
+title: The Game Patch
 parent: Implementation
 nav_order: 1
 ---
-
-# The Game Patch
 
 Space Quest 5 is written as a game for the late SCI v1.1 interpreter. It's game
 is made from a collection of resources for images, sounds, code, etc. Our game
@@ -32,4 +30,3 @@ TODO
 TODO
 
 - Mention mappings for lines.
-
