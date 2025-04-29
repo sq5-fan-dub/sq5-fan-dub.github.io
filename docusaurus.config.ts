@@ -60,7 +60,7 @@ const config: Config = {
     // Replace with your project's social card
     image: 'sq5-fan-dub/img/docusaurus-social-card.jpg',
     navbar: {
-      title: 'My Site',
+      title: 'SQ5: Re-Mutilated',
       logo: {
         alt: 'My Site Logo',
         src: 'img/logo.svg',
@@ -70,11 +70,11 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Tutorial',
+          label: 'About',
         },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/sq5-fan-dub',
           label: 'GitHub',
           position: 'right',
         },
