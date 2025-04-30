@@ -1,6 +1,5 @@
 ---
 title: Project Overview
-permalink: /project/
 nav_order: 1
 ---
 

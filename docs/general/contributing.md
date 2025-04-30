@@ -39,4 +39,6 @@ We will need to have a public face to the project in order to get some buzz goin
 
 ## Okay, but how can I help?
 
-If you're interested in helping, please submit your interest through our contribution form. This will let us know what roles you're interested in, what skills you may have, and how much time you want to contribute. We are all volunteers here, so we don't expect this to be a full-time job for anyone.
+If you're interested in helping, please submit your interest through our [contribution form][ContributionForm]. This will let us know what roles you're interested in, what skills you may have, and how much time you want to contribute. We are all volunteers here, so we don't expect this to be a full-time job for anyone.
+
+[ContributionForm]: https://docs.google.com/forms/d/e/1FAIpQLSdk1VqenAdrqx0JNzAE2xjDCq1efGv4mgOm47bDvgEF_mMqkw/viewform

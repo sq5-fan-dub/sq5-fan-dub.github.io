@@ -1,6 +1,6 @@
 ---
 title: About the Project
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 ## What is this?
@@ -11,7 +11,7 @@ If you don't know what Space Quest 5 is, it was an adventure game in the long ru
 
 If you don't know what an adventure game is, it is a genre of video game where you take the role of one or more characters and try to solve their problems through puzzles mostly coming from the clever application of items and dialogue through a point-and-click interface. This is as opposed to the genre where you take the role of one or more characters to solve their problems through puzzles mostly coming from the clever application of sharp things on the fleshy bits of things they don't like.
 
-If you don't know what a video game is, it is a type of computer program that humans derive entertainment from through using input devices like a keyboard, mouse, or controller, usually resulting through visual or auditory stimulation through specially designed output devices. It is one of the most successful types of media in the world at the moment, and has been blamed for a great proportion of the world's problems.
+If you don't know what a video game is, it is a type of computer program that humans derive entertainment from through using input devices like a keyboard, mouse, or controller, usually resulting in visual or auditory stimulation through specially designed output devices. It is one of the most successful types of media in the world at the moment, and has been blamed for a great proportion of the world's problems.
 
 If you don't know what a computer program is, then I'm not sure how you're reading this.
 
@@ -37,7 +37,7 @@ We will update this as we know now. We're hoping to finish it by early 2026, but
 
 ## How can I help?
 
-Take a look at the [Contributing](./project/contributing.md) page if you want to help out.
+Take a look at the [Contributing](./contributing.md) page if you want to help out.
 
 ## Is this an official project?
 

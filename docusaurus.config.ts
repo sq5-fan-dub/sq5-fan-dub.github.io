@@ -10,14 +10,14 @@ const config: Config = {
   favicon: 'sq5-fan-dub/img/favicon.ico',
 
   // Set the production url of your site here
-  url: 'https://naerbnic.github.io',
+  url: 'https://sq5-fan-dub.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/sq5-fan-dub/',
+  baseUrl: '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'naerbnic', // Usually your GitHub org/user name.
+  organizationName: 'sq5-fan-dub', // Usually your GitHub org/user name.
   projectName: 'sq5-fan-dub', // Usually your repo name.
 
   onBrokenLinks: 'throw',
@@ -87,7 +87,7 @@ const config: Config = {
           title: 'Docs',
           items: [
             {
-              label: 'Tutorial',
+              label: 'Project Documentation',
               to: '/docs/intro',
             },
           ],

@@ -1,6 +1,5 @@
 ---
 title: The Game Patch
-parent: Implementation
 nav_order: 1
 ---
 
