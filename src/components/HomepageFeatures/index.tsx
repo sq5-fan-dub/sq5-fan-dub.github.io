@@ -30,6 +30,14 @@ const FeatureList: FeatureItem[] = [
       </>
     ),
   },
+  {
+    title: 'The Game Script',
+    description: (
+      <>
+        Take a look at the <Link to="script">game script</Link>!
+      </>
+    )
+  }
 ];
 
 function Feature({ title, Svg, description }: FeatureItem) {
