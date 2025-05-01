@@ -1,0 +1,39 @@
+name: Build Pages
+
+on:
+  workflow_call:
+    outputs:
+      artifact_id:
+        description: The ID of the pages artifact created by the build job.
+        value: ${{ jobs.build.outputs.artifact_id }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    outputs:
+      artifact_id: ${{ steps.export.outputs.artifact_id }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Node.js 22.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install
+
+      - name: Build production bundle
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: build
+
+      - name: Upload static files as artifact
+        id: export
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/
