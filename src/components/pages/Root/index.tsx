@@ -7,7 +7,7 @@ import Layout from '@theme/Layout';
 
 export interface Props {
   sidebar?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 export default function Root({ sidebar, children }): ReactNode {

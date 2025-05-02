@@ -3,7 +3,7 @@ import { ReactNode, useCallback, useState } from "react";
 import { prefersReducedMotion, ThemeClassNames } from "@docusaurus/theme-common";
 import clsx from "clsx";
 
-import styles from "@theme/DocRoot/Layout/Sidebar/styles.module.css";
+import styles from './styles.module.css'
 import ExpandButton from '@theme/DocRoot/Layout/Sidebar/ExpandButton';
 
 export interface Props {

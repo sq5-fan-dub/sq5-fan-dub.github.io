@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { ReactNode } from "react";
 
-import styles from '@theme/DocRoot/Layout/Mainstyles.module.css';
+import styles from './styles.module.css';
 
 export interface Props {
   hasSidebar: boolean;

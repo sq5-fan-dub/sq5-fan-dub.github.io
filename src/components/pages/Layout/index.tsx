@@ -9,13 +9,14 @@ import {
 } from 'react';
 import BackToTopButton from '@theme/BackToTopButton';
 import LayoutSidebar from './Sidebar';
+import LayoutMain from './Main';
 
 // The following imports may not be part of the docusaurus public API. They
 // will need to be duplicated here before full publishing.
 //
 // The code is under the MIT license, which is compatible with the permissive
 // license of this project.
-import layoutStyles from '@theme/DocRoot/Layout/styles.module.css';
+import layoutStyles from './styles.module.css';
 
 export interface Props {
   // The sidebar to display on the left side of the page. If not provided, the
@@ -39,6 +40,11 @@ export default function Layout({ sidebar, content }: Props): ReactNode {
             {sidebar}
           </LayoutSidebar>
         )}
+        <LayoutMain
+          hasSidebar={!!sidebar}
+          isSidebarVisible={sidebarVisible}>
+          {content}
+        </LayoutMain>
       </div>
     </div>
   );
