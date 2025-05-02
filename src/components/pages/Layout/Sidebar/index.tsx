@@ -2,6 +2,7 @@ import { useLocation } from "@docusaurus/router";
 import { ReactNode, useCallback, useState } from "react";
 import { prefersReducedMotion, ThemeClassNames } from "@docusaurus/theme-common";
 import clsx from "clsx";
+import Sidebar from "../../Sidebar"
 
 import styles from './styles.module.css'
 import ExpandButton from '@theme/DocRoot/Layout/Sidebar/ExpandButton';
@@ -47,7 +48,11 @@ export default function LayoutSidebar({ children, isVisible, setVisible }: Props
           styles.sidebarViewport,
           hiddenSidebar && styles.sidebarViewportHidden,
         )}>
-        {children}
+        <Sidebar
+          onCollapse={toggleSidebar}
+          isVisible={isVisible}>
+          {children}
+        </Sidebar>
         {hiddenSidebar && <ExpandButton toggleSidebar={toggleSidebar} />}
       </div>
     </aside>
