@@ -28,7 +28,7 @@ export interface Props {
 }
 
 export default function Layout({ sidebar, content }: Props): ReactNode {
-  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
   return (
     <div className={layoutStyles.docsWrapper}>
       <BackToTopButton />

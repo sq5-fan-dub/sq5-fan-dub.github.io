@@ -13,8 +13,6 @@ export interface Props {
 }
 
 export default function LayoutSidebar({ children, isVisible, setVisible }: Props): ReactNode {
-  const { pathname } = useLocation();
-
   const [hiddenSidebar, setHiddenSidebar] = useState(false);
   const toggleSidebar = useCallback(() => {
     if (hiddenSidebar) {

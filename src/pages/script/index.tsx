@@ -156,7 +156,7 @@ function ScriptPage({ script, fragment }: {
   );
 
   return <ScriptData.Provider value={scriptIndex}>
-    <PageRoot sidebar>
+    <PageRoot sidebar={sidebar}>
       <div>
         <h2>Roles</h2>
         <RoleTable />
