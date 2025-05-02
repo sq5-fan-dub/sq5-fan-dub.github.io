@@ -212,7 +212,7 @@ function ScriptLayout({ convs }: { convs: Conversation[] }): ReactNode {
         {nounElems}
       </section>
     }).flat()
-  return <div className={scriptStyles.scriptGrid} children={entryNodes} />
+  return <div className={scriptStyles.script} children={entryNodes} />
 }
 
 function RoleTable({ }): ReactNode {
