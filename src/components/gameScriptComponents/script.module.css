@@ -133,7 +133,7 @@
       text-indent: -1em;
 
       &:hover {
-        background-color: #f0f0f0;
+        background-color: var(--ifm-hover-overlay);
       }
     }
   }
