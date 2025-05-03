@@ -15,6 +15,8 @@ import { useLocation } from '@docusaurus/router';
 import { produce } from 'immer';
 import { createIndex } from '@site/src/components/gameScriptComponents/scriptIndex';
 
+import styles from './page.module.css';
+
 const ajv = new Ajv({
   formats: {
     'uint32': true,
@@ -95,12 +97,14 @@ function ScriptPage({ script, fragment }: {
   }
 
   const sidebar = (
-    <TableOfContents
-      focuses={scriptState.focuses || {}}
-      onFocusClose={onFocusClose}
-      onRoleSelect={onRoleSelect}
-      onRoomSelect={onRoomSelect}
-    />
+    <div className={styles.scrollPane}>
+      <TableOfContents
+        focuses={scriptState.focuses || {}}
+        onFocusClose={onFocusClose}
+        onRoleSelect={onRoleSelect}
+        onRoomSelect={onRoomSelect}
+      />
+    </div>
   );
 
   return <ScriptData.Provider value={scriptIndex}>
