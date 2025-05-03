@@ -1,4 +1,11 @@
-import { useLocation } from "@docusaurus/router";
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Brian Chin.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the src/components/pages directory of this source tree.
+ */
+
 import { ReactNode, useCallback, useState } from "react";
 import { prefersReducedMotion, ThemeClassNames } from "@docusaurus/theme-common";
 import clsx from "clsx";

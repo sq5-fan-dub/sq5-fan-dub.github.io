@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Brian Chin.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the src/components/pages directory of this source tree.
+ */
+
 // A basic layout component that allows for a header, footer, sidebar, and main content area.
 //
 // Much of this code is copied/adapted from the Docusaurus theme-classic package,
