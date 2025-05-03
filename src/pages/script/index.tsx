@@ -40,7 +40,7 @@ function ScriptPage({ script, fragment }: {
     }
     element?.scrollIntoView();
   }, [fragment])
-  const [scriptState, setScriptState] = useState<ScriptPageState | null>({});
+  const [scriptState, setScriptState] = useState<ScriptPageState>({});
   const onFocusClose = useCallback((field: 'role_id' | 'room_id') => {
     switch (field) {
       case 'role_id':

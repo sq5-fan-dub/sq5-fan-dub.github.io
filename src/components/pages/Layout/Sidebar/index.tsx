@@ -42,7 +42,7 @@ export default function LayoutSidebar({ children, isVisible, setVisible }: Props
         !isVisible && styles.docSidebarContainerHidden,
       )}
       onTransitionEnd={(e) => {
-        if (!e.currentTarget.classList.contains(styles.docSidebarContainer!)) {
+        if (!e.currentTarget.classList.contains(styles.docSidebarContainer)) {
           return;
         }
 
