@@ -1,10 +1,18 @@
-import { ReactNode, MouseEventHandler, useState, Ref, useCallback, createContext, useContext, useEffect, useMemo } from 'react';
-import { GameScript, RichText, TextPiece } from './scriptTypes';
+import {
+  ReactNode,
+  MouseEventHandler,
+  useState,
+  Ref,
+  useCallback,
+  createContext,
+  useContext,
+  useEffect,
+} from 'react';
+import { RichText, TextPiece } from './scriptTypes';
 import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import { PopOver } from '../popper/popper';
-import { produce } from 'immer';
 import { Conversation, createIndex, Line, ScriptIndex } from './scriptIndex';
 
 // Utility functions
@@ -79,7 +87,7 @@ function useScriptFont() {
 
 // React contexts
 
-const ScriptData = createContext<ScriptIndex | null>(null);
+export const ScriptData = createContext<ScriptIndex | null>(null);
 
 function useScriptData(): ScriptIndex | null {
   return useContext(ScriptData);
@@ -186,7 +194,7 @@ function ConversationElem({ conv }: { conv: Conversation }): ReactNode {
   </div>;
 }
 
-function ScriptLayout({ convs }: { convs: Conversation[] }): ReactNode {
+export function ScriptLayout({ convs }: { convs: Conversation[] }): ReactNode {
   const entryNodes = sortBy(objGroupBy(convs, a => a.parentRoom),
     ([room, _]) => room.num).map(([room, convs]) => {
       const nounElems = sortBy(objGroupBy(convs, a => a.parentNoun),
@@ -215,7 +223,7 @@ function ScriptLayout({ convs }: { convs: Conversation[] }): ReactNode {
   return <div className={scriptStyles.script} children={entryNodes} />
 }
 
-function RoleTable({ }): ReactNode {
+export function RoleTable({ }): ReactNode {
   const script = useContext(ScriptData);
   return <table className={scriptStyles.roleTable}>
     <thead>
@@ -242,7 +250,7 @@ export interface TocFocuses {
   readonly room_id?: string;
 };
 
-function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSelect }: {
+export function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSelect }: {
   focuses?: TocFocuses,
   onFocusClose?: (field: 'role_id' | 'room_id') => void,
   onRoleSelect?: (role_id: string) => void,
@@ -293,108 +301,7 @@ function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSelect }: 
   </div>;
 }
 
-interface ScriptPageEventHandlers {
+export interface ScriptPageEventHandlers {
   readonly onRoleSelect?: (role_id: string) => void;
   readonly onRoomSelect?: (room_id: string) => void;
-}
-
-export default function ScriptPage({ script, headerHeight, fragment, handlers }: {
-  script: GameScript,
-  headerHeight: number,
-  fragment?: string,
-  handlers?: ScriptPageEventHandlers
-}): ReactNode {
-  useEffect(() => {
-    if (!fragment) {
-      console.log("No fragment")
-      return;
-    }
-
-    const element = document.getElementById(fragment);
-    if (!element) {
-      return;
-    }
-    element?.scrollIntoView();
-  }, [fragment])
-  const [scriptState, setScriptState] = useState<ScriptPageState | null>({});
-  const onFocusClose = useCallback((field: 'role_id' | 'room_id') => {
-    switch (field) {
-      case 'role_id':
-        setScriptState(produce(draft => {
-          draft.focuses = draft.focuses || {};
-          draft.focuses.role_id = null;
-        }));
-        break;
-      case 'room_id':
-        setScriptState(produce(draft => {
-          draft.focuses = draft.focuses || {};
-          draft.focuses.room_id = null;
-        }));
-        break;
-    }
-  }, []);
-  const onRoleSelect = useCallback((role_id: string) => {
-    setScriptState(produce(draft => {
-      draft.focuses = draft.focuses || {};
-      draft.focuses.role_id = role_id;
-    }));
-  }, []);
-  const onRoomSelect = useCallback((room_id: string) => {
-    setScriptState(produce(draft => {
-      draft.focuses = draft.focuses || {};
-      draft.focuses.room_id = room_id;
-    }));
-  }, []);
-
-  const scriptIndex = useMemo(() => createIndex(script), [script]);
-
-  const conversations = useMemo(() => {
-    if (!script) {
-      return [];
-    }
-
-    let conversations = Object.values(scriptIndex.conversations);
-    if (scriptState.focuses?.room_id) {
-      conversations = conversations.filter(conv => {
-        return conv.parentRoom.id === scriptState.focuses.room_id;
-      });
-    }
-
-    if (scriptState.focuses?.role_id) {
-      conversations = conversations.filter(conv => {
-        return conv.containsRole(scriptState.focuses.role_id);
-      });
-    }
-    return conversations;
-  }, [script, scriptState]);
-
-  if (!script) {
-    return null;
-  }
-
-  const body = <ScriptLayout convs={conversations} />;
-
-  return <ScriptData.Provider value={scriptIndex}>
-    <div className={scriptStyles.scriptWindow}>
-      <div className={scriptStyles.scriptSidebar}>
-        <div className={scriptStyles.sideMenu} style={{
-          ['--header-height' as any]: `${headerHeight}px`,
-        }}>
-          <TableOfContents
-            focuses={scriptState.focuses || {}}
-            onFocusClose={onFocusClose}
-            onRoleSelect={onRoleSelect}
-            onRoomSelect={onRoomSelect}
-          />
-        </div>
-      </div>
-      <div className={scriptStyles.scriptMain}>
-        <div>
-          <h2>Roles</h2>
-          <RoleTable />
-        </div>
-        {body}
-      </div>
-    </div>
-  </ScriptData.Provider>
 }
