@@ -175,12 +175,12 @@
 
   .convSet {
     display: grid;
-    grid-template-columns: [verb-start] 7em [verb-end cond-start] 7em [cond-end conv-start] max-content [conv-end];
+    grid-template-columns: [verbStart] 7em [verbEnd condStart] 7em [condEnd convStart] max-content [convEnd];
     border: 1px solid var(--ifm-table-border-color);
     justify-content: left;
     justify-items: stretch;
 
-    & + .convSet {
+    &+.convSet {
       border-top-width: 0px;
     }
   }
@@ -188,7 +188,7 @@
   .verb {
     position: sticky;
     top: 0;
-    grid-column: verb;
+    grid-column: verbStart / verbEnd;
     padding: 0.5em;
     border-right: 1px solid var(--ifm-table-border-color);
   }
@@ -196,15 +196,15 @@
   .cond {
     position: sticky;
     top: 0;
-    grid-column: cond;
+    grid-column: condStart / condEnd;
     padding: 0.5em;
     border-right: 1px solid var(--ifm-table-border-color);
   }
 
   .conv {
-    grid-column: conv;
+    grid-column: convStart / convEnd;
     display: grid;
-    grid-template-columns: [speaker-start] 7em [speaker-end line-text-start] 1fr [line-text-end];
+    grid-template-columns: [speakerStart] 7em [speakerEnd lineTextStart] 1fr [lineTextEnd];
     padding: 0.5em;
     width: fit-content;
 
@@ -219,12 +219,12 @@
       .speaker {
         font-weight: bold;
         text-transform: uppercase;
-        grid-column: speaker;
+        grid-column: speakerStart / speakerEnd;
         justify-self: end;
       }
 
       .lineText {
-        grid-column: line-text;
+        grid-column: lineTextStart / lineTextEnd;
         margin-left: 0.5em;
         max-width: 36em;
         hyphens: auto;
