@@ -1,10 +1,18 @@
-import { ReactNode, MouseEventHandler, useState, Ref, useCallback, createContext, useContext, useEffect, useMemo } from 'react';
-import { GameScript, RichText, TextPiece } from './scriptTypes';
+import {
+  ReactNode,
+  MouseEventHandler,
+  useState,
+  Ref,
+  useCallback,
+  createContext,
+  useContext,
+  useEffect,
+} from 'react';
+import { RichText, TextPiece } from './scriptTypes';
 import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import { PopOver } from '../popper/popper';
-import { produce } from 'immer';
 import { Conversation, createIndex, Line, ScriptIndex } from './scriptIndex';
 
 // Utility functions
