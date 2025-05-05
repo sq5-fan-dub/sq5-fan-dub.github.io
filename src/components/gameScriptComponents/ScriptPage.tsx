@@ -13,21 +13,37 @@ import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import { PopOver } from '../popper/popper';
-import { Conversation, createIndex, Line, ScriptIndex } from './scriptIndex';
+import { Conversation, createIndex, Line, Noun, Room, ScriptIndex } from './scriptIndex';
 
 // Utility functions
 
-function sortBy<T>(arr: T[], keyFn: (a: T) => (number | string)): T[] {
+type Sortable = number | string | Sortable[];
+
+function sortItems(a: Sortable, b: Sortable): number {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    // Sort arrays lexicographically by item.
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+      const result = sortItems(a[i], b[i]);
+      if (result !== 0) {
+        return result;
+      }
+    }
+    return a.length - b.length;
+  }
+
+  if (a < b) {
+    return -1;
+  }
+  if (a > b) {
+    return 1;
+  }
+  return 0;
+
+}
+
+function sortBy<T>(arr: T[], keyFn: (a: T) => Sortable): T[] {
   return arr.sort((a, b) => {
-    const aKey = keyFn(a);
-    const bKey = keyFn(b);
-    if (aKey < bKey) {
-      return -1;
-    }
-    if (aKey > bKey) {
-      return 1;
-    }
-    return 0;
+    return sortItems(keyFn(a), keyFn(b));
   });
 }
 
@@ -37,7 +53,7 @@ function sortBy<T>(arr: T[], keyFn: (a: T) => (number | string)): T[] {
 // It returns an array of mapped values.
 function getObjectEntries<T, R>(
   obj: { [k: string]: T },
-  sortKeyFn?: (a: T, k: string) => (number | string)
+  sortKeyFn?: (a: T, k: string) => Sortable
 ): [T, string][] {
   type SortEntry = [T, string];
   let entries: SortEntry[] = [];
@@ -194,32 +210,43 @@ function ConversationElem({ conv }: { conv: Conversation }): ReactNode {
   </div>;
 }
 
+function NounElem({ noun, convs }: {
+  noun: Noun,
+  convs: Conversation[],
+}): ReactNode {
+  const convElems = sortBy(convs, conv => conv.num).map((conv) => {
+    return <ConversationElem
+      key={conv.id}
+      conv={conv}
+    />
+  });
+  return <section key={noun.id} id={noun.id} className={scriptStyles.noun}>
+    <header>
+      <RichTextElem richText={noun.title} /><IdControls id={noun.id} />
+    </header>
+    {convElems}
+  </section>
+}
+
+function RoomElem({ room, convs }: { room: Room, convs: Conversation[] }): ReactNode {
+  const nounElems = sortBy(objGroupBy(convs, a => a.parentNoun),
+    ([noun, _]) => noun.num).map(([noun, convs]) =>
+      <NounElem key={noun.id} noun={noun} convs={convs} />
+    );
+
+  return <section id={room.id} className={scriptStyles.room}>
+    <header>
+      <RichTextElem richText={room.title} /><IdControls id={room.id} />
+    </header>
+    {nounElems}
+  </section>
+}
+
 export function ScriptLayout({ convs }: { convs: Conversation[] }): ReactNode {
   const entryNodes = sortBy(objGroupBy(convs, a => a.parentRoom),
-    ([room, _]) => room.num).map(([room, convs]) => {
-      const nounElems = sortBy(objGroupBy(convs, a => a.parentNoun),
-        ([noun, _]) => noun.num).map(([noun, convs]) => {
-          const convElems = sortBy(convs, conv => conv.num).map((conv) => {
-            return <ConversationElem
-              key={conv.id}
-              conv={conv}
-            />
-          });
-          return <section key={noun.id} id={noun.id} className={scriptStyles.noun}>
-            <header>
-              <RichTextElem richText={noun.title} /><IdControls id={noun.id} />
-            </header>
-            {convElems}
-          </section>
-        }).flat()
-
-      return <section key={room.id} id={room.id} className={scriptStyles.room}>
-        <header>
-          <RichTextElem richText={room.title} /><IdControls id={room.id} />
-        </header>
-        {nounElems}
-      </section>
-    }).flat()
+    ([room, _]) => room.num).map(([room, convs]) =>
+      <RoomElem key={room.id} room={room} convs={convs} />
+    );
   return <div className={scriptStyles.script} children={entryNodes} />
 }
 
