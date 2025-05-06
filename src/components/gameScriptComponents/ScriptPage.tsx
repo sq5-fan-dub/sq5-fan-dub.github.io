@@ -13,7 +13,7 @@ import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import { PopOver } from '../popper/popper';
-import { Conversation, createIndex, Line, Noun, Room, ScriptIndex } from './scriptIndex';
+import { Conversation, Line, Noun, Room, ScriptIndex } from './scriptIndex';
 
 // Utility functions
 
@@ -109,6 +109,12 @@ function useScriptData(): ScriptIndex | null {
   return useContext(ScriptData);
 }
 
+export const CurrentHighlightId = createContext<string | null>(null);
+
+function useCurrentHighlightId(): string | null {
+  return useContext(CurrentHighlightId);
+}
+
 // React components
 
 function Icon({ icon }: { icon: string }): ReactNode {
@@ -187,14 +193,13 @@ function RichTextElem({ richText }: { richText: RichText }): ReactNode {
   return richText.items.map((textItem, index) => <TextPieceElem key={index} textItem={textItem} />)
 }
 
-function LineElem({ line, focuses }: {
+function LineElem({ line }: {
   line: Line,
-  focuses: TocFocuses,
 }): ReactNode {
-  const script = useContext(ScriptData);
+  const highlightId = useCurrentHighlightId();
   return <div id={line.id} className={clsx(
     scriptStyles.line,
-    (focuses.hash_id == line.id) && scriptStyles.focused,
+    (highlightId == line.id) && scriptStyles.focused,
   )}>
     <div className={scriptStyles.speaker}>{line.role.shortName}:</div>
     <div className={scriptStyles.lineText}>
@@ -203,9 +208,8 @@ function LineElem({ line, focuses }: {
   </div>
 }
 
-function ConversationElem({ conv, focuses }: {
+function ConversationElem({ conv }: {
   conv: Conversation,
-  focuses: TocFocuses,
 }): ReactNode {
   return <div className={scriptStyles.convSet} id={conv.id}>
     <div className={scriptStyles.verb}>{conv.verb || <i>Any</i>}</div>
@@ -213,22 +217,20 @@ function ConversationElem({ conv, focuses }: {
     <div className={scriptStyles.conv}>
       {
         conv.lines.map((line) =>
-          <LineElem key={line.id} line={line} focuses={focuses} />)
+          <LineElem key={line.id} line={line} />)
       }
     </div>
   </div>;
 }
 
-function NounElem({ noun, convs, focuses }: {
+function NounElem({ noun, convs }: {
   noun: Noun,
   convs: Conversation[],
-  focuses: TocFocuses,
 }): ReactNode {
   const convElems = sortBy(convs, conv => conv.num).map((conv) => {
     return <ConversationElem
       key={conv.id}
       conv={conv}
-      focuses={focuses}
     />
   });
   return <section key={noun.id} id={noun.id} className={scriptStyles.noun}>
@@ -239,14 +241,13 @@ function NounElem({ noun, convs, focuses }: {
   </section>
 }
 
-function RoomElem({ room, convs, focuses }: {
+function RoomElem({ room, convs }: {
   room: Room,
   convs: Conversation[],
-  focuses: TocFocuses,
 }): ReactNode {
   const nounElems = sortBy(objGroupBy(convs, a => a.parentNoun),
     ([noun, _]) => noun.num).map(([noun, convs]) =>
-      <NounElem key={noun.id} noun={noun} convs={convs} focuses={focuses} />
+      <NounElem key={noun.id} noun={noun} convs={convs} />
     );
 
   return <section id={room.id} className={scriptStyles.room}>
@@ -257,15 +258,17 @@ function RoomElem({ room, convs, focuses }: {
   </section>
 }
 
-export function ScriptLayout({ convs, focuses }: {
+export function ScriptLayout({ convs, highlight }: {
   convs: Conversation[],
-  focuses: TocFocuses,
+  highlight: string | null,
 }): ReactNode {
   const entryNodes = sortBy(objGroupBy(convs, a => a.parentRoom),
     ([room, _]) => room.num).map(([room, convs]) =>
-      <RoomElem key={room.id} room={room} convs={convs} focuses={focuses} />
+      <RoomElem key={room.id} room={room} convs={convs} />
     );
-  return <div className={scriptStyles.script} children={entryNodes} />
+  return <CurrentHighlightId value={highlight}>
+    <div className={scriptStyles.script} children={entryNodes} />
+  </CurrentHighlightId>
 }
 
 // A summary of the contents of the script.
@@ -312,7 +315,9 @@ export function RoleTable({ script, onRoleSelect }: {
         getObjectEntries(script.roles, a => a.name)
           .map(([role, role_id]) =>
             <tr key={role_id} id={role_id}>
-              <td>{role.name}</td>
+              <td><a href="#" onClick={() => {
+                onRoleSelect(role_id);
+              }}>{role.name}</a></td>
               <td>{role.shortName}</td>
             </tr>)
       }
@@ -324,7 +329,6 @@ export interface TocFocuses {
   readonly conv_id?: string;
   readonly role_id?: string;
   readonly room_id?: string;
-  readonly hash_id?: string;
 };
 
 export function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSelect }: {
@@ -351,30 +355,38 @@ export function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSel
       </li>);
 
   return <div className={scriptStyles.toc}>
-    {
-      focuses.role_id &&
-      <div className={scriptStyles.focusItem}>
-        <span>Role:</span>
-        <span>{script.roles[focuses.role_id].name}</span>
-        <button onClick={() => onFocusClose('role_id')}>X</button>
-      </div>
-    }
-    {
-      focuses.room_id &&
-      <div className={scriptStyles.focusItem}>
-        <span>Room:</span>
-        <span><RichTextElem richText={script.rooms[focuses.room_id].title} /></span>
-        <button onClick={() => onFocusClose('room_id')}>X</button>
-      </div>
-    }
-    {
-      focuses.conv_id &&
-      <div className={scriptStyles.focusItem}>
-        <span>Conversation:</span>
-        <span>{focuses.conv_id}</span>
-        <button onClick={() => onFocusClose('conv_id')}>X</button>
-      </div>
-    }
+    <div className={scriptStyles.focusList}>
+      {
+        focuses.role_id &&
+        <div className={scriptStyles.focusItem}>
+          <div>
+            <span>Role:</span> {" "}
+            <span>{script.roles[focuses.role_id].name}</span>
+          </div>
+          <button onClick={() => onFocusClose('role_id')}>X</button>
+        </div>
+      }
+      {
+        focuses.room_id &&
+        <div className={scriptStyles.focusItem}>
+          <div>
+            <span>Room:</span> {" "}
+            <span><RichTextElem richText={script.rooms[focuses.room_id].title} /></span>
+          </div>
+          <button onClick={() => onFocusClose('room_id')}>X</button>
+        </div>
+      }
+      {
+        focuses.conv_id &&
+        <div className={scriptStyles.focusItem}>
+          <div>
+            <span>Conversation:</span> {" "}
+            <span>{focuses.conv_id}</span>
+          </div>
+          <button onClick={() => onFocusClose('conv_id')}>X</button>
+        </div>
+      }
+    </div>
     <div className={scriptStyles.scrollPane}>
       <section>
         <header>Roles</header>

@@ -31,12 +31,12 @@ function ScriptPage({ script, ref }: {
   script: GameScript,
   ref: React.RefObject<ScriptPageHandle>,
 }): ReactNode {
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const [scriptState, setScriptState] = useState<ScriptPageState>({
     focuses: {
       conv_id: null,
       role_id: null,
       room_id: null,
-      hash_id: null,
     }
   });
   const onFocusClose = useCallback((field: 'role_id' | 'room_id' | 'conv_id') => {
@@ -74,8 +74,8 @@ function ScriptPage({ script, ref }: {
             conv_id: line.parentConversation.id,
             role_id: null,
             room_id: line.parentConversation.parentRoom.id,
-            hash_id: id,
           };
+          setHighlightId(id);
         }))
       }
     }
@@ -136,7 +136,7 @@ function ScriptPage({ script, ref }: {
   return <ScriptData.Provider value={scriptIndex}>
     <PageRoot sidebar={sidebar}>
       {hasFilter ?
-        <ScriptLayout convs={conversations} focuses={scriptState.focuses} /> :
+        <ScriptLayout convs={conversations} highlight={highlightId} /> :
         <ScriptSummary
           script={scriptIndex}
           onRoleSelect={onRoleSelect}

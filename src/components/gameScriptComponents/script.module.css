@@ -74,6 +74,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+
   section {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
@@ -104,8 +105,15 @@
     }
   }
 
-  .focusItem {
-    padding: 0.5em;
+  .focusList {
+    display: grid;
+    grid-template-columns: 1fr max-content;
+    .focusItem {
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: 1 / -1;
+      padding: 0.5em;
+    }
   }
 }
 
@@ -206,6 +214,7 @@
       }
     }
   }
+
   .focused {
     background-color: var(--ifm-color-primary-contrast-background);
   }
