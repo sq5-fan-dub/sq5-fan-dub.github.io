@@ -206,6 +206,9 @@
       }
     }
   }
+  .focused {
+    background-color: var(--ifm-color-primary-contrast-background);
+  }
 }
 
 .scrollPane {

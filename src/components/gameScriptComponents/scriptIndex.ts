@@ -49,11 +49,13 @@ export interface ScriptIndex {
   nouns: { [id: string]: Noun };
   roles: { [id: string]: Role };
   rooms: { [id: string]: Room };
+  lines: { [id: string]: Line };
 }
 
 export function createIndex(script: ScriptJson): ScriptIndex {
   const index = new ScriptIndexImpl();
-  const freezeList: Object[] = [index];
+  const freezeList: Object[] = [];
+  index.addToFreezeList(freezeList);
   for (const [id, role] of Object.entries(script.roles)) {
     const roleObj = new RoleImpl(index, id, role.name, role.short_name);
     index.roles[id] = roleObj;
@@ -99,6 +101,7 @@ export function createIndex(script: ScriptJson): ScriptIndex {
       const role = index.roles[line.role];
       roleSet.add(role);
       const lineObj = new LineImpl(index, line.id, role, line.text, convObj);
+      index.lines[line.id] = lineObj;
       convObj.lines.push(lineObj);
       freezeList.push(lineObj);
     }
@@ -123,12 +126,23 @@ class ScriptIndexImpl implements ScriptIndex {
   rooms: { [id: string]: Room; };
   nouns: { [id: string]: Noun; };
   conversations: { [id: string]: Conversation; };
+  lines: { [id: string]: Line; };
 
   constructor() {
     this.conversations = Object.create(null);
     this.nouns = Object.create(null);
     this.roles = Object.create(null);
     this.rooms = Object.create(null);
+    this.lines = Object.create(null);
+  }
+
+  addToFreezeList(obj: Object[]): void {
+    obj.push(this);
+    obj.push(this.conversations);
+    obj.push(this.nouns);
+    obj.push(this.roles);
+    obj.push(this.rooms);
+    obj.push(this.lines);
   }
 }
 

@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import {
   ScriptPageState,
   ScriptData,
@@ -23,48 +23,70 @@ const ajv = new Ajv({
 });
 const validate = ajv.compile(scriptSchema);
 
-function ScriptPage({ script, fragment }: {
-  script: GameScript,
-  fragment?: string,
-}): ReactNode {
-  useEffect(() => {
-    if (!fragment) {
-      console.log("No fragment")
-      return;
-    }
+interface ScriptPageHandle {
+  setFocusId: (id: string | null) => void;
+}
 
-    const element = document.getElementById(fragment);
-    if (!element) {
-      return;
+function ScriptPage({ script, ref }: {
+  script: GameScript,
+  ref: React.RefObject<ScriptPageHandle>,
+}): ReactNode {
+  const [scriptState, setScriptState] = useState<ScriptPageState>({
+    focuses: {
+      conv_id: null,
+      role_id: null,
+      room_id: null,
+      hash_id: null,
     }
-    element?.scrollIntoView();
-  }, [fragment])
-  const [scriptState, setScriptState] = useState<ScriptPageState>({});
-  const onFocusClose = useCallback((field: 'role_id' | 'room_id') => {
+  });
+  const onFocusClose = useCallback((field: 'role_id' | 'room_id' | 'conv_id') => {
     switch (field) {
       case 'role_id':
         setScriptState(produce(draft => {
-          draft.focuses = draft.focuses || {};
           draft.focuses.role_id = null;
         }));
         break;
       case 'room_id':
         setScriptState(produce(draft => {
-          draft.focuses = draft.focuses || {};
           draft.focuses.room_id = null;
         }));
         break;
+      case 'conv_id':
+        setScriptState(produce(draft => {
+          draft.focuses.conv_id = null;
+        }))
     }
   }, []);
+  useImperativeHandle(ref, () => ({
+    setFocusId: (id: string | null) => {
+      if (!id) {
+        return;
+      }
+
+      if (id.startsWith('line-')) {
+        // We set the focus to the conversation with the line
+        const line = scriptIndex.lines[id]
+        if (!line) {
+          return;
+        }
+        setScriptState(produce(draft => {
+          draft.focuses = {
+            conv_id: line.parentConversation.id,
+            role_id: null,
+            room_id: line.parentConversation.parentRoom.id,
+            hash_id: id,
+          };
+        }))
+      }
+    }
+  }));
   const onRoleSelect = useCallback((role_id: string) => {
     setScriptState(produce(draft => {
-      draft.focuses = draft.focuses || {};
       draft.focuses.role_id = role_id;
     }));
   }, []);
   const onRoomSelect = useCallback((room_id: string) => {
     setScriptState(produce(draft => {
-      draft.focuses = draft.focuses || {};
       draft.focuses.room_id = room_id;
     }));
   }, []);
@@ -77,6 +99,11 @@ function ScriptPage({ script, fragment }: {
     }
 
     let conversations = Object.values(scriptIndex.conversations);
+    if (scriptState.focuses?.conv_id) {
+      conversations = conversations.filter(conv => {
+        return conv.id === scriptState.focuses.conv_id;
+      });
+    }
     if (scriptState.focuses?.room_id) {
       conversations = conversations.filter(conv => {
         return conv.parentRoom.id === scriptState.focuses.room_id;
@@ -99,7 +126,7 @@ function ScriptPage({ script, fragment }: {
 
   const sidebar = (
     <TableOfContents
-      focuses={scriptState.focuses || {}}
+      focuses={scriptState.focuses}
       onFocusClose={onFocusClose}
       onRoleSelect={onRoleSelect}
       onRoomSelect={onRoomSelect}
@@ -109,7 +136,7 @@ function ScriptPage({ script, fragment }: {
   return <ScriptData.Provider value={scriptIndex}>
     <PageRoot sidebar={sidebar}>
       {hasFilter ?
-        <ScriptLayout convs={conversations} /> :
+        <ScriptLayout convs={conversations} focuses={scriptState.focuses} /> :
         <ScriptSummary
           script={scriptIndex}
           onRoleSelect={onRoleSelect}
@@ -122,11 +149,24 @@ function ScriptPage({ script, fragment }: {
 export default function Page({ }): ReactNode {
   // We represent the current state as a fragment of the URL.
   const location = useLocation();
+  const scriptRef = useRef<ScriptPageHandle>(null);
+  useEffect(() => {
+    if (!scriptRef.current) {
+      return;
+    }
 
-  let hash = null;
-  if (location.hash) {
-    hash = location.hash.substring(1);
-  }
+    if (!location.hash) {
+      return;
+    }
+
+    const hash = location.hash.substring(1);
+    if (!hash) {
+      return;
+    }
+
+    scriptRef.current.setFocusId(hash);
+  }, [location.hash]);
+
   if (!scriptData) {
     return null;
   }
@@ -137,6 +177,6 @@ export default function Page({ }): ReactNode {
   return (
     <ScriptPage
       script={scriptData as GameScript}
-      fragment={hash} />
+      ref={scriptRef} />
   );
 }
