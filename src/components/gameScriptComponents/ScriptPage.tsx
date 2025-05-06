@@ -272,15 +272,14 @@ export function ScriptLayout({ convs, highlight }: {
 }
 
 // A summary of the contents of the script.
-export function ScriptSummary({ script, onRoleSelect, onRoomSelect }: {
+export function ScriptSummary({ script, onFocusSelect }: {
   script: ScriptIndex,
-  onRoleSelect: (role_id: string) => void,
-  onRoomSelect: (room_id: string) => void,
+  onFocusSelect: (focus: keyof TocFocuses, id: string) => void,
 }): ReactNode {
   return <div className={scriptStyles.summary}>
     <div>
       <h2>Roles</h2>
-      <RoleTable script={script} onRoleSelect={onRoleSelect} />
+      <RoleTable script={script} onFocusSelect={onFocusSelect} />
     </div>
     <div>
       <h2>Rooms</h2>
@@ -290,7 +289,7 @@ export function ScriptSummary({ script, onRoleSelect, onRoomSelect }: {
             .map((room) =>
               <li key={room.id} id={room.id}>
                 <a href="#" onClick={() => {
-                  onRoomSelect(room.id);
+                  onFocusSelect('room_id', room.id);
                 }}><RichTextElem richText={room.title} /></a>
               </li>)
         }
@@ -299,9 +298,9 @@ export function ScriptSummary({ script, onRoleSelect, onRoomSelect }: {
   </div>
 }
 
-export function RoleTable({ script, onRoleSelect }: {
+export function RoleTable({ script, onFocusSelect }: {
   script: ScriptIndex,
-  onRoleSelect: (role_id: string) => void,
+  onFocusSelect: (focus: keyof TocFocuses, id: string) => void,
 }): ReactNode {
   return <table className={scriptStyles.roleTable}>
     <thead>
@@ -316,7 +315,7 @@ export function RoleTable({ script, onRoleSelect }: {
           .map(([role, role_id]) =>
             <tr key={role_id} id={role_id}>
               <td><a href="#" onClick={() => {
-                onRoleSelect(role_id);
+                onFocusSelect('role_id', role_id);
               }}>{role.name}</a></td>
               <td>{role.shortName}</td>
             </tr>)
@@ -325,68 +324,84 @@ export function RoleTable({ script, onRoleSelect }: {
   </table>;
 }
 
+interface FocusDesc {
+  readonly typeName: string;
+  readonly nameRender: (script: ScriptIndex, id: string) => ReactNode;
+};
+
+type FocusDescMap = {
+  [key in keyof TocFocuses]: FocusDesc;
+}
+
+const FocusDescs: FocusDescMap = {
+  conv_id: {
+    typeName: 'Conversation',
+    nameRender: (script, id) => {
+      return id;
+    },
+  },
+  role_id: {
+    typeName: 'Role',
+    nameRender: (script, id) => {
+      return script.roles[id].name;
+    },
+  },
+  room_id: {
+    typeName: 'Room',
+    nameRender: (script, id) => {
+      return <RichTextElem richText={script.rooms[id].title} />;
+    }
+  },
+}
+
 export interface TocFocuses {
   readonly conv_id?: string;
   readonly role_id?: string;
   readonly room_id?: string;
 };
 
-export function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSelect }: {
+export function TableOfContents({ focuses, onFocusClose, onFocusSelect }: {
   focuses?: TocFocuses,
-  onFocusClose?: (field: 'role_id' | 'room_id' | 'conv_id') => void,
-  onRoleSelect?: (role_id: string) => void,
-  onRoomSelect?: (room_id: string) => void,
+  onFocusClose?: (field: keyof TocFocuses) => void,
+  onFocusSelect?: (focus: keyof TocFocuses, id: string) => void,
 }): ReactNode {
   const script = useScriptData();
   focuses = focuses || {};
   onFocusClose = onFocusClose || (() => { });
-  onRoleSelect = onRoleSelect || (() => { });
-  onRoomSelect = onRoomSelect || (() => { });
+  onFocusSelect = onFocusSelect || (() => { });
 
   const roleEntries = getObjectEntries(script.roles, a => a.name)
     .map(([role, role_id]) =>
-      <li key={role_id} id={role_id} onClick={() => onRoleSelect(role_id)}>
+      <li key={role_id} id={role_id} onClick={() => onFocusSelect('role_id', role_id)}>
         {role.name}
       </li>);
   const roomEntries = sortBy(Object.values(script.rooms), a => a.num)
     .map((room) =>
-      <li key={room.id} id={room.id} onClick={() => onRoomSelect(room.id)}>
+      <li key={room.id} id={room.id} onClick={() => onFocusSelect('room_id', room.id)}>
         <RichTextElem richText={room.title} />
       </li>);
 
-  return <div className={scriptStyles.toc}>
-    <div className={scriptStyles.focusList}>
-      {
-        focuses.role_id &&
-        <div className={scriptStyles.focusItem}>
-          <div>
-            <span>Role:</span> {" "}
-            <span>{script.roles[focuses.role_id].name}</span>
-          </div>
-          <button onClick={() => onFocusClose('role_id')}>X</button>
-        </div>
-      }
-      {
-        focuses.room_id &&
-        <div className={scriptStyles.focusItem}>
-          <div>
-            <span>Room:</span> {" "}
-            <span><RichTextElem richText={script.rooms[focuses.room_id].title} /></span>
-          </div>
-          <button onClick={() => onFocusClose('room_id')}>X</button>
-        </div>
-      }
-      {
-        focuses.conv_id &&
-        <div className={scriptStyles.focusItem}>
-          <div>
-            <span>Conversation:</span> {" "}
-            <span>{focuses.conv_id}</span>
-          </div>
-          <button onClick={() => onFocusClose('conv_id')}>X</button>
-        </div>
-      }
+  const focusItems: ReactNode[] = Object.keys(focuses).map((key) => {
+    const id = focuses[key];
+    if (!id) {
+      return null;
+    }
+    const focusDesc: FocusDesc = FocusDescs[key];
+    if (!focusDesc) {
+      throw new Error(`Unknown focus type: ${key}`);
+    }
+
+    return <div className={scriptStyles.focusItem} key={key}>
+      <div>
+        <span>{focusDesc.typeName}:</span> {" "}
+        <span>{focusDesc.nameRender(script, id)}</span>
+      </div>
+      <button onClick={() => onFocusClose(key as keyof TocFocuses)}>X</button>
     </div>
+  });
+
+  return <div className={scriptStyles.toc}>
+    <div className={scriptStyles.focusList} children={focusItems} />
     <div className={scriptStyles.scrollPane}>
       <section>
         <header>Roles</header>
@@ -398,9 +413,4 @@ export function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSel
       </section>
     </div>
   </div>;
-}
-
-export interface ScriptPageEventHandlers {
-  readonly onRoleSelect?: (role_id: string) => void;
-  readonly onRoomSelect?: (room_id: string) => void;
 }

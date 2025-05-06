@@ -6,6 +6,7 @@ import {
   TableOfContents,
   RoleTable,
   ScriptSummary,
+  TocFocuses,
 } from '@site/src/components/gameScriptComponents/ScriptPage';
 import PageRoot from '@site/src/components/pages/Root';
 import Ajv from 'ajv';
@@ -39,23 +40,11 @@ function ScriptPage({ script, ref }: {
       room_id: null,
     }
   });
-  const onFocusClose = useCallback((field: 'role_id' | 'room_id' | 'conv_id') => {
-    switch (field) {
-      case 'role_id':
-        setScriptState(produce(draft => {
-          draft.focuses.role_id = null;
-        }));
-        break;
-      case 'room_id':
-        setScriptState(produce(draft => {
-          draft.focuses.room_id = null;
-        }));
-        break;
-      case 'conv_id':
-        setScriptState(produce(draft => {
-          draft.focuses.conv_id = null;
-        }))
-    }
+  const onFocusClose = useCallback((focus: keyof TocFocuses) => {
+    console.log('onFocusClose', focus);
+    setScriptState(produce(draft => {
+      draft.focuses[focus] = null;
+    }));
   }, []);
   useImperativeHandle(ref, () => ({
     setFocusId: (id: string | null) => {
@@ -73,21 +62,16 @@ function ScriptPage({ script, ref }: {
           draft.focuses = {
             conv_id: line.parentConversation.id,
             role_id: null,
-            room_id: line.parentConversation.parentRoom.id,
+            room_id: null,
           };
           setHighlightId(id);
         }))
       }
     }
   }));
-  const onRoleSelect = useCallback((role_id: string) => {
+  const onFocusSelect = useCallback((focus: keyof TocFocuses, id: string) => {
     setScriptState(produce(draft => {
-      draft.focuses.role_id = role_id;
-    }));
-  }, []);
-  const onRoomSelect = useCallback((room_id: string) => {
-    setScriptState(produce(draft => {
-      draft.focuses.room_id = room_id;
+      draft.focuses[focus] = id;
     }));
   }, []);
 
@@ -128,8 +112,7 @@ function ScriptPage({ script, ref }: {
     <TableOfContents
       focuses={scriptState.focuses}
       onFocusClose={onFocusClose}
-      onRoleSelect={onRoleSelect}
-      onRoomSelect={onRoomSelect}
+      onFocusSelect={onFocusSelect}
     />
   );
 
@@ -139,8 +122,8 @@ function ScriptPage({ script, ref }: {
         <ScriptLayout convs={conversations} highlight={highlightId} /> :
         <ScriptSummary
           script={scriptIndex}
-          onRoleSelect={onRoleSelect}
-          onRoomSelect={onRoomSelect} />
+          onFocusSelect={onFocusSelect}
+        />
       }
     </PageRoot>
   </ScriptData.Provider>;
