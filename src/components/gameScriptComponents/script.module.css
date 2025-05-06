@@ -1,5 +1,5 @@
 /* Classes to have a set of buttons that are hidden unless the parent element is hovered */
-*>.hover-reveal {
+*>.hoverReveal {
   display: inline-flex;
   cursor: pointer;
   align-items: center;
@@ -7,45 +7,8 @@
   visibility: hidden;
 }
 
-*:hover>.hover-reveal {
+*:hover>.hoverReveal {
   visibility: initial;
-}
-
-.section {
-  border-left-width: 1px;
-  border-left-style: dashed;
-  border-left-color: transparent;
-}
-
-.section:hover {
-  border-left-color: darkgray;
-}
-
-.section-body {
-  padding-left: 1em;
-  margin-top: 1em;
-  margin-bottom: 1em;
-}
-
-.section-title {
-  padding-left: 0.1em;
-  font-size: 2em;
-  font-weight: bold;
-  font-family: Helvetica, sans-serif;
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-}
-
-.section .section-title {
-  font-size: 1.5em;
-}
-
-.section .section .section-title {
-  font-size: 1.25em;
-}
-
-.section .section .section .section-title {
-  font-size: 1.1em;
 }
 
 .material-symbols-outlined {
@@ -108,6 +71,9 @@
 }
 
 .toc {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   section {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
@@ -242,34 +208,11 @@
   }
 }
 
-.scriptWindow {
-  display: flex;
-  flex-direction: row;
-  justify-content: stretch;
-  width: 100%;
-}
-
-.scriptSidebar {
-  flex: 0 0 280px;
-  position: relative;
-  /* Create positioning context */
-}
-
-.scriptMain {
-  flex: 1;
-  display: block;
-  /* Remove overflow-y property to ensure natural page flow */
-}
-
-.sideMenu {
-  --header-height: 0px;
-  position: sticky;
-  /* Stick to the top of the viewport */
-  top: 0;
-  /* Limit height to viewport minus navbar */
-  max-height: calc(100vh - var(--header-height));
-  /* Show scrollbar in sidebar when content overflows */
-  /* Space for scrollbar */
-  padding-right: 10px;
+.scrollPane {
+  flex: 1 auto;
   overflow-y: scroll;
+}
+
+.summary {
+  display: flex;
 }

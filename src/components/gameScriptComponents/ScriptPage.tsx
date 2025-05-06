@@ -165,7 +165,7 @@ function IdControls({ id }: { id: string }): ReactNode {
 }
 
 function ParentHoverReveal({ children }: { children?: ReactNode }): ReactNode {
-  return <div className={scriptStyles['hover-reveal']}>
+  return <div className={scriptStyles.hoverReveal}>
     {children}
   </div>
 }
@@ -250,8 +250,38 @@ export function ScriptLayout({ convs }: { convs: Conversation[] }): ReactNode {
   return <div className={scriptStyles.script} children={entryNodes} />
 }
 
-export function RoleTable({ }): ReactNode {
-  const script = useContext(ScriptData);
+// A summary of the contents of the script.
+export function ScriptSummary({ script, onRoleSelect, onRoomSelect }: {
+  script: ScriptIndex,
+  onRoleSelect: (role_id: string) => void,
+  onRoomSelect: (room_id: string) => void,
+}): ReactNode {
+  return <div className={scriptStyles.summary}>
+    <div>
+      <h2>Roles</h2>
+      <RoleTable script={script} onRoleSelect={onRoleSelect} />
+    </div>
+    <div>
+      <h2>Rooms</h2>
+      <ul>
+        {
+          sortBy(Object.values(script.rooms), a => a.num)
+            .map((room) =>
+              <li key={room.id} id={room.id}>
+                <a href="#" onClick={() => {
+                  onRoomSelect(room.id);
+                }}><RichTextElem richText={room.title} /></a>
+              </li>)
+        }
+      </ul>
+    </div>
+  </div>
+}
+
+export function RoleTable({ script, onRoleSelect }: {
+  script: ScriptIndex,
+  onRoleSelect: (role_id: string) => void,
+}): ReactNode {
   return <table className={scriptStyles.roleTable}>
     <thead>
       <tr>
@@ -273,6 +303,7 @@ export function RoleTable({ }): ReactNode {
 }
 
 export interface TocFocuses {
+  readonly conv_id?: string;
   readonly role_id?: string;
   readonly room_id?: string;
 };
@@ -317,14 +348,16 @@ export function TableOfContents({ focuses, onFocusClose, onRoleSelect, onRoomSel
         <button onClick={() => onFocusClose('room_id')}>X</button>
       </div>
     }
-    <section>
-      <header>Roles</header>
-      <menu>{roleEntries}</menu>
-    </section>
-    <section>
-      <header>Rooms</header>
-      <menu>{roomEntries}</menu>
-    </section>
+    <div className={scriptStyles.scrollPane}>
+      <section>
+        <header>Roles</header>
+        <menu>{roleEntries}</menu>
+      </section>
+      <section>
+        <header>Rooms</header>
+        <menu>{roomEntries}</menu>
+      </section>
+    </div>
   </div>;
 }
 

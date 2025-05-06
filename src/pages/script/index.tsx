@@ -5,6 +5,7 @@ import {
   ScriptLayout,
   TableOfContents,
   RoleTable,
+  ScriptSummary,
 } from '@site/src/components/gameScriptComponents/ScriptPage';
 import PageRoot from '@site/src/components/pages/Root';
 import Ajv from 'ajv';
@@ -14,8 +15,6 @@ import scriptData from '@site/static/script.json';
 import { useLocation } from '@docusaurus/router';
 import { produce } from 'immer';
 import { createIndex } from '@site/src/components/gameScriptComponents/scriptIndex';
-
-import styles from './page.module.css';
 
 const ajv = new Ajv({
   formats: {
@@ -96,24 +95,26 @@ function ScriptPage({ script, fragment }: {
     return null;
   }
 
+  let hasFilter = scriptState.focuses?.role_id || scriptState.focuses?.room_id;
+
   const sidebar = (
-    <div className={styles.scrollPane}>
-      <TableOfContents
-        focuses={scriptState.focuses || {}}
-        onFocusClose={onFocusClose}
-        onRoleSelect={onRoleSelect}
-        onRoomSelect={onRoomSelect}
-      />
-    </div>
+    <TableOfContents
+      focuses={scriptState.focuses || {}}
+      onFocusClose={onFocusClose}
+      onRoleSelect={onRoleSelect}
+      onRoomSelect={onRoomSelect}
+    />
   );
 
   return <ScriptData.Provider value={scriptIndex}>
     <PageRoot sidebar={sidebar}>
-      <div>
-        <h2>Roles</h2>
-        <RoleTable />
-      </div>
-      <ScriptLayout convs={conversations} />
+      {hasFilter ?
+        <ScriptLayout convs={conversations} /> :
+        <ScriptSummary
+          script={scriptIndex}
+          onRoleSelect={onRoleSelect}
+          onRoomSelect={onRoomSelect} />
+      }
     </PageRoot>
   </ScriptData.Provider>;
 }
