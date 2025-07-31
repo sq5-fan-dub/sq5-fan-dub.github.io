@@ -9,16 +9,19 @@ import {
   TocFocuses,
 } from '@site/src/components/gameScriptComponents/ScriptPage';
 import PageRoot from '@site/src/components/pages/Root';
-import Ajv from 'ajv';
+import Ajv from 'ajv/dist/2020';
 import scriptSchema from './script.schema.json';
-import { GameScript } from '@site/src/components/gameScriptComponents/scriptTypes';
+import { BookFormat } from '@site/src/components/gameScriptComponents/scriptTypes';
 import scriptData from '@site/static/script.json';
 import { useLocation } from '@docusaurus/router';
 import { produce } from 'immer';
-import { createIndex } from '@site/src/components/gameScriptComponents/scriptIndex';
+import { createBookFromJSON } from '@site/src/components/gameScriptComponents/book';
 
 const ajv = new Ajv({
   formats: {
+    'uint': true,
+    'uint16': true,
+    'uint8': true,
     'uint32': true,
   }
 });
@@ -29,7 +32,7 @@ interface ScriptPageHandle {
 }
 
 function ScriptPage({ script, ref }: {
-  script: GameScript,
+  script: BookFormat,
   ref: React.RefObject<ScriptPageHandle>,
 }): ReactNode {
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -54,7 +57,7 @@ function ScriptPage({ script, ref }: {
 
       if (id.startsWith('line-')) {
         // We set the focus to the conversation with the line
-        const line = scriptIndex.lines[id]
+        const line = book.lines[id]
         if (!line) {
           return;
         }
@@ -75,14 +78,14 @@ function ScriptPage({ script, ref }: {
     }));
   }, []);
 
-  const scriptIndex = useMemo(() => createIndex(script), [script]);
+  const book = useMemo(() => createBookFromJSON(script), [script]);
 
   const conversations = useMemo(() => {
     if (!script) {
       return [];
     }
 
-    let conversations = Object.values(scriptIndex.conversations);
+    let conversations = Object.values(book.conversations);
     if (scriptState.focuses?.conv_id) {
       conversations = conversations.filter(conv => {
         return conv.id === scriptState.focuses.conv_id;
@@ -116,12 +119,12 @@ function ScriptPage({ script, ref }: {
     />
   );
 
-  return <ScriptData.Provider value={scriptIndex}>
+  return <ScriptData.Provider value={book}>
     <PageRoot sidebar={sidebar}>
       {hasFilter ?
         <ScriptLayout convs={conversations} highlight={highlightId} /> :
         <ScriptSummary
-          script={scriptIndex}
+          script={book}
           onFocusSelect={onFocusSelect}
         />
       }
@@ -159,7 +162,7 @@ export default function Page({ }): ReactNode {
   }
   return (
     <ScriptPage
-      script={scriptData as GameScript}
+      script={scriptData as BookFormat}
       ref={scriptRef} />
   );
 }

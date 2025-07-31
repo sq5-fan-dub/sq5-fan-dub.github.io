@@ -8,7 +8,7 @@ import {
   useContext,
   useEffect,
 } from 'react';
-import { RichText, TextPiece } from './scriptTypes';
+import { RichText, RichTextSegment } from './richText';
 import scriptStyles from './script.module.css';
 import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
@@ -176,7 +176,7 @@ function ParentHoverReveal({ children }: { children?: ReactNode }): ReactNode {
   </div>
 }
 
-function TextPieceElem({ textItem: { text, style } }: { textItem: TextPiece }): ReactNode {
+function TextPieceElem({ textItem: { text, style } }: { textItem: RichTextSegment }): ReactNode {
   let itemNode = <>{text}</>
   if (style) {
     if (style.bold) {
@@ -190,7 +190,7 @@ function TextPieceElem({ textItem: { text, style } }: { textItem: TextPiece }): 
 }
 
 function RichTextElem({ richText }: { richText: RichText }): ReactNode {
-  return richText.items.map((textItem, index) => <TextPieceElem key={index} textItem={textItem} />)
+  return richText.segments.map((textItem, index) => <TextPieceElem key={index} textItem={textItem} />)
 }
 
 function LineElem({ line }: {
@@ -227,7 +227,7 @@ function NounElem({ noun, convs }: {
   noun: Noun,
   convs: Conversation[],
 }): ReactNode {
-  const convElems = sortBy(convs, conv => conv.num).map((conv) => {
+  const convElems = sortBy(convs, conv => conv.raw).map((conv) => {
     return <ConversationElem
       key={conv.id}
       conv={conv}
@@ -246,7 +246,7 @@ function RoomElem({ room, convs }: {
   convs: Conversation[],
 }): ReactNode {
   const nounElems = sortBy(objGroupBy(convs, a => a.parentNoun),
-    ([noun, _]) => noun.num).map(([noun, convs]) =>
+    ([noun, _]) => noun.raw).map(([noun, convs]) =>
       <NounElem key={noun.id} noun={noun} convs={convs} />
     );
 
@@ -263,7 +263,7 @@ export function ScriptLayout({ convs, highlight }: {
   highlight: string | null,
 }): ReactNode {
   const entryNodes = sortBy(objGroupBy(convs, a => a.parentRoom),
-    ([room, _]) => room.num).map(([room, convs]) =>
+    ([room, _]) => room.raw).map(([room, convs]) =>
       <RoomElem key={room.id} room={room} convs={convs} />
     );
   return <CurrentHighlightId value={highlight}>
@@ -285,7 +285,7 @@ export function ScriptSummary({ script, onFocusSelect }: {
       <h2>Rooms</h2>
       <ul>
         {
-          sortBy(Object.values(script.rooms), a => a.num)
+          sortBy(Object.values(script.rooms), a => a.raw)
             .map((room) =>
               <li key={room.id} id={room.id}>
                 <a href="#" onClick={() => {
@@ -375,7 +375,7 @@ export function TableOfContents({ focuses, onFocusClose, onFocusSelect }: {
       <li key={role_id} id={role_id} onClick={() => onFocusSelect('role_id', role_id)}>
         {role.name}
       </li>);
-  const roomEntries = sortBy(Object.values(script.rooms), a => a.num)
+  const roomEntries = sortBy(Object.values(script.rooms), a => a.raw)
     .map((room) =>
       <li key={room.id} id={room.id} onClick={() => onFocusSelect('room_id', room.id)}>
         <RichTextElem richText={room.title} />

@@ -5,65 +5,77 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export interface GameScript {
-  conversations: {
-    [k: string]: Conversation;
-  };
-  nouns: {
-    [k: string]: Noun;
-  };
-  roles: {
-    [k: string]: Role;
-  };
-  rooms: {
-    [k: string]: Room;
-  };
+export type LineText = string | LineSegment[];
+export type LineSegment = string | RichSegment;
+
+export interface BookFormat {
+  conditions: ConditionItem[];
+  conversations: ConversationItem[];
+  lines: LineItem[];
+  nouns: NounItem[];
+  projectName: string;
+  roles: RoleItem[];
+  rooms: RoomItem[];
+  verbs: VerbItem[];
   [k: string]: unknown;
 }
-export interface Conversation {
-  cond?: string | null;
-  conv_id: number;
-  lines: Line[];
-  noun: string;
-  verb?: string | null;
-  [k: string]: unknown;
-}
-export interface Line {
+export interface ConditionItem {
+  description?: string | null;
   id: string;
-  role: string;
-  text: RichText;
+  num: number;
+  parentRoom: number;
   [k: string]: unknown;
 }
-export interface RichText {
-  items: TextPiece[];
+export interface ConversationItem {
+  condition?: number | null;
+  id: string;
+  parentNoun: number;
+  verb?: number | null;
   [k: string]: unknown;
 }
-export interface TextPiece {
-  style?: TextStyle;
+export interface LineItem {
+  id: string;
+  num: number;
+  parentConversation: number;
+  role: number;
+  talker_num: number;
+  text: LineText;
+  [k: string]: unknown;
+}
+export interface RichSegment {
+  style: RichStyle;
   text: string;
   [k: string]: unknown;
 }
-export interface TextStyle {
+export interface RichStyle {
   bold: boolean;
   italic: boolean;
   [k: string]: unknown;
 }
-export interface Noun {
-  conversations: string[];
-  noun_id: number;
-  noun_name?: string | null;
-  noun_title: RichText;
-  room_id: string;
+export interface NounItem {
+  description?: string | null;
+  id: string;
+  is_cutscene: boolean;
+  num: number;
+  parentRoom: number;
   [k: string]: unknown;
 }
-export interface Role {
+export interface RoleItem {
+  id: string;
   name: string;
-  short_name: string;
+  raw: string;
+  shortName: string;
   [k: string]: unknown;
 }
-export interface Room {
-  nouns: string[];
-  room_id: number;
-  room_title: RichText;
+export interface RoomItem {
+  id: string;
+  name?: string | null;
+  num: number;
+  [k: string]: unknown;
+}
+export interface VerbItem {
+  id: string;
+  name: string;
+  num: number;
   [k: string]: unknown;
 }
