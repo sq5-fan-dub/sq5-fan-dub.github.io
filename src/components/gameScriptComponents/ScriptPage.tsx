@@ -8,6 +8,7 @@ import {
   useContext,
   useEffect,
 } from 'react';
+import { useLocation } from '@docusaurus/router';
 import { RichText, RichTextSegment } from './richText';
 import scriptStyles from './script.module.css';
 import clsx from 'clsx';
@@ -134,7 +135,7 @@ function IconButton({ icon, ref, onClick }: {
   </div>
 }
 
-function CopyButton({ text }: { text: string }): ReactNode {
+function CopyToClipboardButton({ text, iconName, message }: { text: string, iconName: string, message: string }): ReactNode {
   const isBrowser = useIsBrowser();
   const [buttonRef, setButtonRef] = useState<HTMLElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -150,7 +151,7 @@ function CopyButton({ text }: { text: string }): ReactNode {
 
   return <>
     <IconButton
-      icon="content_copy"
+      icon={iconName}
       ref={setButtonRef}
       onClick={isBrowser ? clickCallback : null}
     />
@@ -158,15 +159,20 @@ function CopyButton({ text }: { text: string }): ReactNode {
       isOpen && <PopOver target={buttonRef} options={{
         placement: 'bottom',
       }}>
-        <div className={scriptStyles.popup}>{`Copied ID To Clipboard: ${text}`}</div>
+        <div className={scriptStyles.popup}>{`${message}: ${text}`}</div>
       </PopOver>
     }
   </>;
 }
 
 function IdControls({ id }: { id: string }): ReactNode {
+  const isBrowser = useIsBrowser();
+  const location = useLocation();
+  console.log('%o', document.location);
+  const link = isBrowser ? new URL(`#${id}`, document.location.href).href : `${location.pathname}#${id}`;
   return <ParentHoverReveal>
-    <CopyButton text={id} />
+    <CopyToClipboardButton text={id} iconName="content_copy" message="Copied ID To Clipboard" />
+    <CopyToClipboardButton text={link} iconName="link" message="Copied Link To Clipboard" />
   </ParentHoverReveal>
 }
 
