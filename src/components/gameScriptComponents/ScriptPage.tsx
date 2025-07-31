@@ -168,7 +168,6 @@ function CopyToClipboardButton({ text, iconName, message }: { text: string, icon
 function IdControls({ id }: { id: string }): ReactNode {
   const isBrowser = useIsBrowser();
   const location = useLocation();
-  console.log('%o', document.location);
   const link = isBrowser ? new URL(`#${id}`, document.location.href).href : `${location.pathname}#${id}`;
   return <ParentHoverReveal>
     <CopyToClipboardButton text={id} iconName="content_copy" message="Copied ID To Clipboard" />

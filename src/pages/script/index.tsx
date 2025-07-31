@@ -44,7 +44,6 @@ function ScriptPage({ script, ref }: {
     }
   });
   const onFocusClose = useCallback((focus: keyof TocFocuses) => {
-    console.log('onFocusClose', focus);
     setScriptState(produce(draft => {
       draft.focuses[focus] = null;
     }));
@@ -69,6 +68,20 @@ function ScriptPage({ script, ref }: {
           };
           setHighlightId(id);
         }))
+      } else if (id.startsWith('conv-')) {
+        // We set the focus to the conversation
+        const conv = book.conversations[id];
+        if (!conv) {
+          return;
+        }
+        setScriptState(produce(draft => {
+          draft.focuses = {
+            conv_id: conv.id,
+            role_id: null,
+            room_id: null
+          };
+          setHighlightId(conv.id);
+        }));
       }
     }
   }));
@@ -109,7 +122,7 @@ function ScriptPage({ script, ref }: {
     return null;
   }
 
-  let hasFilter = scriptState.focuses?.role_id || scriptState.focuses?.room_id;
+  let hasFilter = scriptState.focuses?.role_id || scriptState.focuses?.room_id || scriptState.focuses?.conv_id;
 
   const sidebar = (
     <TableOfContents
